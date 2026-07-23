@@ -17,6 +17,10 @@ import Footer from './components/Footer.jsx';
 import Chatbot from './components/Chatbot.jsx';
 import ScrollToTop from './ScrollToTop.jsx';
 import TryOnModel from './Pages/TryOnModel.jsx';
+import AboutUS from './Pages/AboutUS.jsx';
+import FAQs from './Pages/FAQs.jsx';
+import Careers from './Pages/Careers.jsx';
+import Returnexchange from './Pages/Returnexchange.jsx';
 
 function App() {
   return (
@@ -41,6 +45,10 @@ function App() {
                     <Route path="/product/:id" element={<ProductDetail />} />
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/order-confirmation" element={<OrderConfirmation />} />
+                    <Route path="/Aboutus" element={<AboutUS />} />
+                     <Route path="/faqs" element={<FAQs />} />
+                       <Route path="/careers" element={<Careers />} />
+                       <Route path="/returnexchange" element={<Returnexchange />} />
                     <Route path="/virtual-room" element={<TryOnModel isOpen={true} onClose={() => window.history.back()} />} />
                   </Routes>
                 </main>
