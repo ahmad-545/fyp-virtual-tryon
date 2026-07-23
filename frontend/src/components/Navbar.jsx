@@ -74,14 +74,14 @@ function Navbar() {
               to="/"
               className="relative group transition duration-300 hover:text-[#C19A6B]"
             >
-              Home
+              HOME
               <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-[#C19A6B] transition-all duration-300 group-hover:w-full"></span>
             </Link>
 
             {/* MEN */}
             <div className="relative group py-2">
               <button className="flex items-center gap-1 hover:text-[#C19A6B] transition cursor-pointer">
-                Men
+                MEN
                 <ChevronDown size={16} className="transition-transform duration-300 group-hover:rotate-180" />
               </button>
 
@@ -114,7 +114,7 @@ function Navbar() {
             {/* WOMEN */}
             <div className="relative group py-2">
               <button className="flex items-center gap-1 hover:text-[#C19A6B] transition cursor-pointer">
-                Women
+                WOMEN
                 <ChevronDown size={16} className="transition-transform duration-300 group-hover:rotate-180" />
               </button>
 
@@ -144,7 +144,7 @@ function Navbar() {
             {/* KIDS */}
             <div className="relative group py-2">
               <button className="flex items-center gap-1 hover:text-[#C19A6B] transition cursor-pointer">
-                Kids
+                KIDS
                 <ChevronDown size={16} className="transition-transform duration-300 group-hover:rotate-180" />
               </button>
 
@@ -160,12 +160,12 @@ function Navbar() {
 
             {/* SALE */}
             <Link to="/shop?productType=trending" className="text-[#C19A6B] font-semibold hover:text-red-600 transition">
-              Sales
+              SALES
             </Link>
 
             {/* TRY ON CLOTH */}
             <Link to="/virtual-room" className="bg-[#C19A6B]/10 text-[#C19A6B] px-4 py-2 rounded-full hover:bg-[#C19A6B] hover:text-white transition-all duration-300 font-bold">
-              Try On Cloth
+              TRY ON CLOTH
             </Link>
 
           </div>
