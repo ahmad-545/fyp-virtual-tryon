@@ -318,16 +318,16 @@ export default function ProductGrid() {
                         </button>
 
                         <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/product/${item._id}`);
-                          }}
-                          className="bg-gray-900 hover:bg-black py-3.5 px-2 text-[11px] font-bold uppercase tracking-wider text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <AiOutlineCamera className="text-sm" />
-                          <span>Try</span>
-                        </button>
+  onClick={(e) => {
+    e.stopPropagation();
+    // Navigate to virtual-room and pass the product details using state
+    navigate(`/virtual-room`, { state: { product: item } });
+  }}
+  className="bg-gray-900 hover:bg-[#C19A6B] py-3 px-2 text-[11px] font-bold uppercase tracking-wider text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+>
+  <AiOutlineCamera className="text-sm text-[#C19A6B] group-hover:text-white" />
+  <span>Try</span>
+</button>
                       </div>
                     </div>
 

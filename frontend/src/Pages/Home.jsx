@@ -16,6 +16,7 @@ import VirtualTryOnPromo from "./VirtualTryOnPromo";
 import Trending from "./Trending";
 import Timer from "./Timer";
 import Feature from "./Feature";
+import Footer from "../components/Footer";
 
 function Home() {
   const slides = [
@@ -82,6 +83,7 @@ function Home() {
     <Trending/>
     <Timer/>
     <Feature/>
+    <Footer/>
     </>
     
   );

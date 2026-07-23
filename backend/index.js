@@ -6,6 +6,9 @@ import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
 import adminRoute from "./routes/adminRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
+import orderRoutes from "./routes/oderRoutes.js";
+import subscriberRouter from "./routes/subscriberRoutes.js";
+import chatRouter from "./routes/chatRoutes.js";
 
 
 dotenv.config();
@@ -33,6 +36,9 @@ app.use(
 
 app.use("/api/admin", adminRoute);
 app.use("/api/products", productRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/subscriber", subscriberRouter);
+app.use("/api", chatRouter);
 
 // Test Route
 app.get("/", (req, res) => {

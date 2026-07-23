@@ -127,7 +127,8 @@ function Checkout() {
     };
 
     try {
-      const response = await axios.post("http://localhost:8030/api/orders/create", orderPayload);
+      // Port corrected to 8000 to match backend server configuration
+      const response = await axios.post("http://localhost:8000/api/orders/create", orderPayload);
 
       if (response.data.success) {
         if (paymentMethod === "cod") {
