@@ -2,29 +2,27 @@ import Order from "../models/oderModel.js";
 import nodemailer from "nodemailer";
 
 // ============================================
-// DYNAMIC SECURE MASTER TRANSPORTER (STORE IDENTITY)
+// 1. CUSTOMER EMAIL DISPATCH ENGINE
 // ============================================
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true, 
-  auth: {
-    user: "ahmaddev545@gmail.com", // 👈 Store ki sender email jahan se app key bani hai
-    pass: "mwkyoxjthjrbscmf"            // 👈 Aapki app password key bina kisi spaces ke
-  },
-  tls: {
-    rejectUnauthorized: false // Localhost system environment security bypass channels
-  }
-});
-
-// ============================================
-// INTERNAL EMAIL DISPATCH ENGINE
-// ============================================
-const sendOrderEmail = async (customerEmail, orderDetails) => {
+const sendCustomerOrderEmail = async (customerEmail, orderDetails) => {
   try {
-    console.log("\n================ 🔍 NODEMAILER ENGINE ACTIVATED ================");
-    console.log("Store Sender Account:", "ahmaddev545545545@gmail.com");
+    // Transporter ko function ke andar rakha taake .env values properly read hon
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true, 
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      },
+      tls: {
+        rejectUnauthorized: false 
+      }
+    });
+
+    console.log("\n================ 🔍 CUSTOMER EMAIL ENGINE ================");
+    console.log("Store Sender Account:", process.env.EMAIL_USER);
     console.log("Target Customer Recipient:", customerEmail);
 
     const itemsHtml = orderDetails.items.map(item => `
@@ -36,9 +34,8 @@ const sendOrderEmail = async (customerEmail, orderDetails) => {
     `).join("");
 
     const mailOptions = {
-      // 'from' field hamesha strict authenticated store email hi rahegi
-      from: '"Trylo Store" <ahmaddev545545545@gmail.com>', 
-      to: customerEmail.trim(), // 👈 Customer ki dynamic input email par confirmation message jayega
+      from: `"Trylo Store" <${process.env.EMAIL_USER}>`, 
+      to: customerEmail.trim(), 
       subject: `FITTED Confirmation - Order #${orderDetails._id.toString().slice(-6).toUpperCase()}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 550px; margin: 0 auto; padding: 25px; border: 1px solid #e5e7eb; border-radius: 8px;">
@@ -64,13 +61,58 @@ const sendOrderEmail = async (customerEmail, orderDetails) => {
       `
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("🚀 MAIL DISPATCH SUCCESS! Email successfully delivered to customer:", customerEmail);
-    console.log("Message ID Track:", info.messageId);
-    console.log("========================================================\n");
+    await transporter.sendMail(mailOptions);
+    console.log("🚀 Customer confirmation email sent successfully!");
   } catch (err) {
-    console.error("❌ NODEMAILER LOGICAL FAILURE =>", err.message);
-    console.log("========================================================\n");
+    console.error("❌ Customer Email Error =>", err.message);
+  }
+};
+
+// ============================================
+// 2. ADMIN NOTIFICATION EMAIL ENGINE
+// ============================================
+const sendAdminNotificationEmail = async (orderData) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true, 
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      },
+      tls: {
+        rejectUnauthorized: false 
+      }
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: process.env.ADMIN_EMAIL,
+      subject: `🎉 New Order Received! #${orderData._id || 'New'}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #fcfcfc;">
+          <h2 style="color: #C19A6B; border-bottom: 2px solid #C19A6B; padding-bottom: 10px; text-transform: uppercase;">New Order Notification</h2>
+          <p>A new order has been successfully placed on <strong>Trylo</strong>.</p>
+          
+          <h3 style="margin-top: 20px; color: #111; text-transform: uppercase; font-size: 14px;">Order Details:</h3>
+          <p><strong>Order ID:</strong> ${orderData._id}</p>
+          <p><strong>Total Amount:</strong> PKR ${orderData.totalAmount || orderData.amount || 'N/A'}</p>
+          <p><strong>Customer Name:</strong> ${orderData.customerInfo?.fullName || orderData.name || 'N/A'}</p>
+          <p><strong>Phone:</strong> ${orderData.customerInfo?.phone || orderData.phone || 'N/A'}</p>
+          <p><strong>Shipping Address:</strong> ${orderData.billingAddress?.address || orderData.address || 'N/A'}</p>
+          
+          <br/>
+          <p style="font-size: 12px; color: #777; border-top: 1px solid #eee; padding-top: 10px;">Please check your admin dashboard to manage shipping status and view items.</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log("🚀 Admin notification email sent successfully!");
+  } catch (error) {
+    console.error("❌ Admin Email Error =>", error);
   }
 };
 
@@ -97,26 +139,23 @@ export const createOrder = async (req, res) => {
     const savedOrder = await newOrder.save();
     console.log("💾 Step 1: Document generated inside database collection.");
 
-    // Dynamic fallback checking extraction criteria
-    let customerInputEmail = customerInfo?.email || customerInfo?.emailOrPhone || "";
-    console.log("🎯 Step 2: Customer Input Email Found =>", customerInputEmail);
+    // 1. Send Admin Email Notification
+    sendAdminNotificationEmail(savedOrder);
 
+    // 2. Send Customer Email Confirmation
+    let customerInputEmail = customerInfo?.email || customerInfo?.emailOrPhone || "";
     if (customerInputEmail && String(customerInputEmail).includes("@")) {
-      console.log("🔄 Step 3: Triggering non-blocking email engine...");
-      
-      // Async background thread fire-and-forget call
-      sendOrderEmail(customerInputEmail, savedOrder).catch(err => 
+      sendCustomerOrderEmail(customerInputEmail, savedOrder).catch(err => 
         console.error("Background Mail Loop Failure:", err.message)
       );
-    } else {
-      console.log("⚠️ Step 3 Dropped: Checkout format contains mobile number, email notification skipped.");
     }
 
     return res.status(201).json({
       success: true,
-      message: "Order placed safely inside dataset collection",
+      message: "Order placed successfully!",
       order: savedOrder
     });
+
   } catch (error) {
     console.error("🔥 DATABASE CREATION ERROR =>", error.message);
     return res.status(500).json({ success: false, message: error.message });
