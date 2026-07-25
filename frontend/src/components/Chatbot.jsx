@@ -5,11 +5,11 @@ import axios from "axios";
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   
-  const welcomeMessage = `Assalam-o-Alaikum! 👋 Welcome to "Trylo" Premium Store. 
+  const welcomeMessage = `Hello! 👋 Welcome to "Trylo" Premium Store. 
 
-Main aapka personal fashion stylist hoon. Aaj main aapko styling, color matching, aur sizing mein guide karunga. 
+I am your personal fashion stylist. Today, I will guide you with styling, color matching, and sizing. 
 
-Main aapki kya madad kar sakta hoon? 👇`;
+How can I assist you today? 👇`;
 
   const [messages, setMessages] = useState([
     { sender: "bot", text: welcomeMessage }
@@ -19,9 +19,9 @@ Main aapki kya madad kar sakta hoon? 👇`;
   const chatEndRef = useRef(null);
 
   const quickPrompts = [
-    { text: "Kurta Matchings 🌟", query: "Black kurta ke sath waistcoat aur pants ka combination batao." },
-    { text: "Casual Dinner Wear 👕", query: "Doston ke sath dinner par jana hai, koi elite Western combo suggest karo." },
-    { text: "Exchange Policy 🔄", query: "Agar size ka masla ho toh exchange policy kya hai?" }
+    { text: "Kurta Matchings 🌟", query: "Suggest a good combination of waistcoat and pants for a black kurta." },
+    { text: "Casual Dinner Wear 👕", query: "I am going to a dinner with friends, suggest an elite Western combo." },
+    { text: "Exchange Policy 🔄", query: "What is the exchange policy if there is a sizing issue?" }
   ];
 
   useEffect(() => {

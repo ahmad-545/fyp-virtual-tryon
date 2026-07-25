@@ -8,6 +8,7 @@ import AdminContext from './admin/context/AdminContext.jsx';
 // Admin & User Components
 import AdminApp from './admin/Adminapp.jsx';
 import Navbar from './Components/Navbar.jsx';
+import LoadingPage from './Pages/LoadingPage.jsx'; 
 import Home from './pages/Home.jsx';
 import ProductGrid from './Pages/ProductGrid.jsx';
 import ProductDetail from './Pages/ProductDetail.jsx';
@@ -21,12 +22,12 @@ import AboutUS from './Pages/AboutUS.jsx';
 import FAQs from './Pages/FAQs.jsx';
 import Careers from './Pages/Careers.jsx';
 import Returnexchange from './Pages/Returnexchange.jsx';
+import Contact from './Pages/Contact.jsx';
 
 function App() {
   return (
     <AuthContext>
       <AdminContext>
-        {/* ScrollToTop should stay inside Router context (BrowserRouter is usually in index.js/main.tsx) */}
         <ScrollToTop />
         <Routes>
           {/* Admin routes (No website Navbar/Footer) */}
@@ -40,15 +41,21 @@ function App() {
                 <Navbar />
                 <main className="flex-grow">
                   <Routes>
-                    <Route path="/" element={<Home />} />
+              
+                    <Route path="/" element={<LoadingPage />} />
+                    
+             
+                    <Route path="/home" element={<Home />} />
+                    
                     <Route path="/shop" element={<ProductGrid />} />
                     <Route path="/product/:id" element={<ProductDetail />} />
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/order-confirmation" element={<OrderConfirmation />} />
                     <Route path="/Aboutus" element={<AboutUS />} />
-                     <Route path="/faqs" element={<FAQs />} />
-                       <Route path="/careers" element={<Careers />} />
-                       <Route path="/returnexchange" element={<Returnexchange />} />
+                    <Route path="/faqs" element={<FAQs />} />
+                    <Route path="/careers" element={<Careers />} />
+                    <Route path="/returnexchange" element={<Returnexchange />} />
+                    <Route path="/contact" element={<Contact />} />
                     <Route path="/virtual-room" element={<TryOnModel isOpen={true} onClose={() => window.history.back()} />} />
                   </Routes>
                 </main>
