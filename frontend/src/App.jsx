@@ -7,9 +7,10 @@ import AdminContext from './admin/context/AdminContext.jsx';
 
 // Admin & User Components
 import AdminApp from './admin/Adminapp.jsx';
-import Navbar from './Components/Navbar.jsx';
+import Navbar from './components/Navbar.jsx';
+
 import LoadingPage from './Pages/LoadingPage.jsx'; 
-import Home from './pages/Home.jsx';
+import Home from './Pages/Home.jsx';
 import ProductGrid from './Pages/ProductGrid.jsx';
 import ProductDetail from './Pages/ProductDetail.jsx';
 import Checkout from './Pages/Checkout.jsx';
