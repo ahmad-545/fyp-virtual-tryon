@@ -83,7 +83,7 @@ function Home() {
     <Trending/>
     <Timer/>
     <Feature/>
-    <Footer/>
+   
     </>
     
   );

@@ -13,6 +13,11 @@ import chatRouter from "./routes/chatRoutes.js";
 
 dotenv.config();
 
+console.log("ENV CHECK");
+console.log("MONGO_URI =", process.env.MONGO_URI);
+
+connectDB();
+
 const app = express();
 
 // Database
