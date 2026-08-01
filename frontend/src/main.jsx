@@ -7,14 +7,22 @@ import { store } from '../src/redux/store.js'
 import { Provider } from 'react-redux'
 import axios from 'axios'
 
-// 1. Global Axios Base URL Setup
+// 1. Server URL Determination
 const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 const currentServerUrl = isLocal ? "http://localhost:8000" : "https://fyp-virtual-tryon.vercel.app";
 
 axios.defaults.baseURL = currentServerUrl;
 axios.defaults.withCredentials = true;
 
-// 2. FETCH OVERRIDE: Taaqe kisi bhi page par fetch mein localhost likha ho toh wo khud live URL ban jaye!
+// 2. AXIOS INTERCEPTOR: Agar kisi component mein ghalti se "http://localhost:8000" likha ho, toh yeh usay khud live URL bana dega!
+axios.interceptors.request.use((config) => {
+  if (config.url && config.url.includes('http://localhost:8000')) {
+    config.url = config.url.replace('http://localhost:8000', currentServerUrl);
+  }
+  return config;
+});
+
+// 3. FETCH OVERRIDE: Fetch requests ke liye
 const originalFetch = window.fetch;
 window.fetch = async (...args) => {
   let [resource, config] = args;
