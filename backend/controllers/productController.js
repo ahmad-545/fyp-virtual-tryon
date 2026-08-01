@@ -85,13 +85,13 @@ export const addProduct = async (req, res) => {
     }
 
     // ==========================
-    // Upload Images
+    // Upload Images (Using buffer for Vercel)
     // ==========================
 
     const uploadedImages = await Promise.all([
-      req.files.image1 ? uploadoncloudinary(req.files.image1[0].path) : null,
-      req.files.image2 ? uploadoncloudinary(req.files.image2[0].path) : null,
-      req.files.image3 ? uploadoncloudinary(req.files.image3[0].path) : null,
+      req.files.image1 ? uploadoncloudinary(req.files.image1[0].buffer) : null,
+      req.files.image2 ? uploadoncloudinary(req.files.image2[0].buffer) : null,
+      req.files.image3 ? uploadoncloudinary(req.files.image3[0].buffer) : null,
     ]);
 
     const images = uploadedImages.filter(Boolean).map((img) => ({
@@ -355,12 +355,12 @@ export const updateProduct = async (req, res) => {
     );
 
     // ==========================
-    // Images
+    // Images (Using buffer for Vercel)
     // ==========================
     let images = product.images;
 
     if (req.files && (req.files.image1 || req.files.image2 || req.files.image3)) {
-      // Delete Old Images
+      // Delete Old Images from Cloudinary
       for (const image of product.images) {
         if (image.public_id) {
           await deleteFromCloudinary(image.public_id);
@@ -368,9 +368,9 @@ export const updateProduct = async (req, res) => {
       }
 
       const uploadedImages = await Promise.all([
-        req.files.image1 ? uploadoncloudinary(req.files.image1[0].path) : null,
-        req.files.image2 ? uploadoncloudinary(req.files.image2[0].path) : null,
-        req.files.image3 ? uploadoncloudinary(req.files.image3[0].path) : null,
+        req.files.image1 ? uploadoncloudinary(req.files.image1[0].buffer) : null,
+        req.files.image2 ? uploadoncloudinary(req.files.image2[0].buffer) : null,
+        req.files.image3 ? uploadoncloudinary(req.files.image3[0].buffer) : null,
       ]);
 
       images = uploadedImages.filter(Boolean).map((img) => ({
