@@ -22,16 +22,43 @@ export default function ProductGrid() {
   const searchQuery = searchParams.get("search") || "";
 
   // ============================================
-  // FETCH PRODUCTS MATRIX WITH CASE-INSENSITIVE FALLBACK
+  // FETCH PRODUCTS MATRIX WITH SEARCH & FALLBACK
   // ============================================
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      
+      // Agar search query ho, toh backend se saare products ya relevant query fetch karein taake client-side par text match ho sake
       let queryUrl = `http://localhost:8000/api/products?${searchParams.toString()}`;
+      
+      // Agar sirf search param hai toh base endpoint se saare products mangwa kar client-side par filter karna ziyada behtar hai
+      if (searchQuery && !categoryParam && !styleParam && !subcatParam && !typeParam) {
+        queryUrl = `http://localhost:8000/api/products`;
+      }
+
       const res = await fetch(queryUrl);
       const data = await res.json();
       
       let fetchedProducts = data.products || data || [];
+
+      // 🔍 Smart Search Text Filtering Logic
+      if (searchQuery) {
+        const queryKeywords = searchQuery.toLowerCase().split(" ").filter(Boolean);
+        fetchedProducts = fetchedProducts.filter(item => {
+          const nameMatch = item.name?.toLowerCase() || "";
+          const catMatch = item.category?.toLowerCase() || "";
+          const subMatch = item.subcategory?.toLowerCase() || "";
+          const styleMatch = item.styleType?.toLowerCase() || "";
+          
+          // Check karein ke search keywords product ke naam ya categories mein mojood hain ya nahi
+          return queryKeywords.every(keyword => 
+            nameMatch.includes(keyword) || 
+            catMatch.includes(keyword) || 
+            subMatch.includes(keyword) || 
+            styleMatch.includes(keyword)
+          );
+        });
+      }
 
       // Fallback: Agar exact subcategory/style query par kuch na mile, toh category ya style par fetch karke client side match karein
       if (fetchedProducts.length === 0 && (subcatParam || styleParam || categoryParam)) {
@@ -103,7 +130,7 @@ export default function ProductGrid() {
         <h3 className="text-xs font-bold text-gray-900 uppercase tracking-[2px] flex items-center gap-2">
           <Filter size={14} className="text-[#C19A6B]" /> Filters
         </h3>
-        {(styleParam || categoryParam || subcatParam || typeParam) && (
+        {(styleParam || categoryParam || subcatParam || typeParam || searchQuery) && (
           <button 
             type="button"
             onClick={() => setSearchParams({})}
@@ -246,7 +273,7 @@ export default function ProductGrid() {
           <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-6">
             <div>
               <h1 className="text-2xl font-serif font-extrabold text-gray-900 tracking-tight uppercase">
-                {categoryParam ? `${categoryParam} Collection` : "Our Collection"}
+                {searchQuery ? `Search Results for "${searchQuery}"` : categoryParam ? `${categoryParam} Collection` : "Our Collection"}
               </h1>
               <p className="text-xs text-gray-400 mt-1 uppercase tracking-wider font-medium">
                 Showing {products.length} refined style articles
@@ -266,7 +293,6 @@ export default function ProductGrid() {
               <p className="text-gray-400 font-medium text-xs tracking-[2px] uppercase">Synchronizing Display Engine...</p>
             </div>
           ) : products.length > 0 ? (
-            /* Updated Grid layout: Exactly 4 cards per row on large screens */
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-12 sm:gap-x-6 sm:gap-y-14">
               {products.map((item) => {
                 const imageUrl = item.images?.[0]?.url || item.images?.[0] || "https://placehold.co/600x800?text=No+Image";
