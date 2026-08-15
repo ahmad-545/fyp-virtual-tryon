@@ -14,6 +14,9 @@ export default function ListProduct() {
   const [previews, setPreviews] = useState([null, null, null]);
   const [existingImages, setExistingImages] = useState([]);
 
+  // ============================================
+  // FETCH PRODUCTS WITH ENHANCED SEARCH LOGIC
+  // ============================================
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -27,9 +30,32 @@ export default function ListProduct() {
 
       const res = await fetch(url);
       const data = await res.json();
-      if (data.success) {
-        setProducts(data.products);
+      
+      let fetchedProducts = data.products || data || [];
+
+      // Enhanced Client-side Search Matching all fields (Name, SKU, Category, Subcategory, StyleType, Status)
+      if (search) {
+        const queryKeywords = search.toLowerCase().split(" ").filter(Boolean);
+        fetchedProducts = fetchedProducts.filter(item => {
+          const nameMatch = item.name?.toLowerCase() || "";
+          const skuMatch = item.sku?.toLowerCase() || "";
+          const catMatch = item.category?.toLowerCase() || "";
+          const subMatch = item.subcategory?.toLowerCase() || "";
+          const styleMatch = item.styleType?.toLowerCase() || "";
+          const statusMatch = item.status?.toLowerCase() || "";
+          
+          return queryKeywords.every(keyword => 
+            nameMatch.includes(keyword) || 
+            skuMatch.includes(keyword) || 
+            catMatch.includes(keyword) || 
+            subMatch.includes(keyword) || 
+            styleMatch.includes(keyword) ||
+            statusMatch.includes(keyword)
+          );
+        });
       }
+
+      setProducts(fetchedProducts);
     } catch (err) {
       console.error("Error fetching products:", err);
     } finally {
@@ -74,7 +100,7 @@ export default function ListProduct() {
       subcategory: product.subcategory || "",
       styleType: product.styleType || "eastern",
       productType: product.productType || "normal",
-      status: product.status || "new", // 👈 Updated default status to match model enum
+      status: product.status || "new",
       sizes: product.sizes && product.sizes.length > 0 ? product.sizes : [{ size: "S", stock: "" }],
       isVirtualTryOnEnabled: product.isVirtualTryOnEnabled || false,
     });
@@ -177,16 +203,26 @@ export default function ListProduct() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
+      <style>{`
+        select {
+          accent-color: #C19A6B;
+        }
+        select option:checked {
+          background: #C19A6B linear-gradient(0deg, #C19A6B 0%, #C19A6B 100%);
+          color: white;
+        }
+      `}</style>
+
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
         
         {/* Header Banner */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-6 md:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="bg-gradient-to-r from-[#C19A6B] to-[#A97A4D] px-6 py-6 md:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-2">
-              <Package className="w-7 h-7 text-yellow-300" />
+              <Package className="w-7 h-7 text-white" />
               All Products Inventory
             </h2>
-            <p className="text-blue-100 text-sm mt-1">
+            <p className="text-[#F5EBE0] text-sm mt-1">
               Manage, search, edit, and monitor your store's active product listings.
             </p>
           </div>
@@ -204,7 +240,7 @@ export default function ListProduct() {
               placeholder="Search by name, category, SKU..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm"
+              className="w-full pl-11 pr-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C19A6B] transition text-sm"
             />
           </div>
 
@@ -213,7 +249,7 @@ export default function ListProduct() {
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full md:w-48 bg-white border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm font-medium text-gray-700"
+              className="w-full md:w-48 bg-white border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#C19A6B] transition text-sm font-medium text-gray-700"
             >
               <option value="">All Categories</option>
               <option value="men">Men</option>
@@ -228,7 +264,7 @@ export default function ListProduct() {
         <div className="p-6 md:p-8">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 text-gray-500">
-              <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+              <div className="w-10 h-10 border-4 border-[#C19A6B] border-t-transparent rounded-full animate-spin mb-3"></div>
               <p className="font-medium text-sm">Loading inventory items...</p>
             </div>
           ) : products.length === 0 ? (
@@ -255,7 +291,7 @@ export default function ListProduct() {
                   </thead>
                   <tbody className="divide-y divide-gray-100 text-sm">
                     {products.map((item) => (
-                      <tr key={item._id} className="hover:bg-blue-50/30 transition">
+                      <tr key={item._id} className="hover:bg-[#C19A6B]/10 transition">
                         <td className="py-3 px-4 flex items-center gap-3">
                           <img
                             src={getProductImage(item)}
@@ -304,7 +340,7 @@ export default function ListProduct() {
                           <span className={`capitalize px-2 py-0.5 rounded-md text-[11px] font-bold ${
                             item.status === "new" ? "bg-emerald-100 text-emerald-700" :
                             item.status === "sale" ? "bg-rose-100 text-rose-700" :
-                            item.status === "sold" ? "bg-gray-200 text-gray-700" : "bg-blue-100 text-blue-700"
+                            item.status === "sold" ? "bg-gray-200 text-gray-700" : "bg-[#C19A6B]/20 text-[#C19A6B]"
                           }`}>
                             {item.status}
                           </span>
@@ -313,7 +349,7 @@ export default function ListProduct() {
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               onClick={() => handleEditClick(item)}
-                              className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition shadow-sm"
+                              className="p-1.5 bg-[#C19A6B]/10 hover:bg-[#C19A6B]/20 text-[#C19A6B] rounded-lg transition shadow-sm"
                               title="Edit"
                             >
                               <Edit size={15} />
@@ -358,7 +394,7 @@ export default function ListProduct() {
                             </span>
                           </div>
                           <p className="text-[11px] font-mono text-gray-500 mt-0.5">SKU: {item.sku}</p>
-                          <p className="text-[11px] text-blue-600 font-semibold capitalize mt-0.5">
+                          <p className="text-[11px] text-[#C19A6B] font-semibold capitalize mt-0.5">
                             {item.category} / {item.subcategory}
                           </p>
                         </div>
@@ -371,7 +407,7 @@ export default function ListProduct() {
                       </div>
                     </div>
                     <div className="mt-3 pt-2.5 border-t border-gray-100 grid grid-cols-2 gap-2">
-                      <button onClick={() => handleEditClick(item)} className="py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+                      <button onClick={() => handleEditClick(item)} className="py-2 bg-[#C19A6B]/10 text-[#C19A6B] rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition">
                         <Edit size={14} /> Edit
                       </button>
                       <button onClick={() => handleDelete(item._id)} className="py-2 bg-red-50 text-red-600 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition">
@@ -416,7 +452,7 @@ export default function ListProduct() {
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {[0, 1, 2].map((i) => (
-                      <label key={i} className="border-2 border-dashed border-gray-300 rounded-xl h-40 cursor-pointer flex flex-col items-center justify-center relative overflow-hidden group hover:border-blue-400">
+                      <label key={i} className="border-2 border-dashed border-gray-300 rounded-xl h-40 cursor-pointer flex flex-col items-center justify-center relative overflow-hidden group hover:border-[#C19A6B]">
                         {previews[i] ? (
                           <img src={previews[i]} className="w-full h-full object-cover" alt="" />
                         ) : existingImages[i] ? (
@@ -436,37 +472,37 @@ export default function ListProduct() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-semibold text-gray-600 uppercase">Product Name</label>
-                    <input name="name" value={editForm.name} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-blue-500 outline-none" required />
+                    <input name="name" value={editForm.name} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-[#C19A6B] outline-none" required />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600 uppercase">SKU</label>
-                    <input name="sku" value={editForm.sku} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-blue-500 outline-none" required />
+                    <input name="sku" value={editForm.sku} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-[#C19A6B] outline-none" required />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600 uppercase">Price</label>
-                    <input type="number" name="price" value={editForm.price} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-blue-500 outline-none" required />
+                    <input type="number" name="price" value={editForm.price} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-[#C19A6B] outline-none" required />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600 uppercase">Old Price</label>
-                    <input type="number" name="oldPrice" value={editForm.oldPrice} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <input type="number" name="oldPrice" value={editForm.oldPrice} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-[#C19A6B] outline-none" />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600 uppercase">Category</label>
-                    <select name="category" value={editForm.category} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <select name="category" value={editForm.category} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-[#C19A6B] outline-none bg-white">
                       <option value="men">Men</option><option value="women">Women</option><option value="kids">Kids</option><option value="accessories">Accessories</option>
                     </select>
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600 uppercase">Subcategory</label>
-                    <input name="subcategory" value={editForm.subcategory} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-blue-500 outline-none" required />
+                    <input name="subcategory" value={editForm.subcategory} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-[#C19A6B] outline-none" required />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600 uppercase">Style / Status</label>
                     <div className="flex gap-2 mt-1">
-                      <select name="styleType" value={editForm.styleType} onChange={handleEditChange} className="w-1/2 border rounded-xl p-2.5 focus:ring-2 outline-none">
+                      <select name="styleType" value={editForm.styleType} onChange={handleEditChange} className="w-1/2 border rounded-xl p-2.5 focus:ring-2 focus:ring-[#C19A6B] outline-none bg-white">
                         <option value="eastern">Eastern</option><option value="western">Western</option>
                       </select>
-                      <select name="status" value={editForm.status} onChange={handleEditChange} className="w-1/2 border rounded-xl p-2.5 focus:ring-2 outline-none capitalize">
+                      <select name="status" value={editForm.status} onChange={handleEditChange} className="w-1/2 border rounded-xl p-2.5 focus:ring-2 focus:ring-[#C19A6B] outline-none bg-white capitalize">
                         <option value="new">New</option>
                         <option value="sale">Sale</option>
                         <option value="sold">Sold</option>
@@ -476,7 +512,7 @@ export default function ListProduct() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600 uppercase">Product Type</label>
-                    <select name="productType" value={editForm.productType} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <select name="productType" value={editForm.productType} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-[#C19A6B] outline-none bg-white">
                       <option value="normal">Normal</option><option value="featured">Featured</option><option value="trending">Trending</option>
                     </select>
                   </div>
@@ -484,29 +520,29 @@ export default function ListProduct() {
 
                 <div>
                   <label className="text-xs font-semibold text-gray-600 uppercase">Description</label>
-                  <textarea name="description" rows={3} value={editForm.description} onChange={handleEditChange} className="w-full border rounded-xl p-3 mt-1 focus:ring-2 focus:ring-blue-500 outline-none resize-none" required />
+                  <textarea name="description" rows={3} value={editForm.description} onChange={handleEditChange} className="w-full border rounded-xl p-3 mt-1 focus:ring-2 focus:ring-[#C19A6B] outline-none resize-none" required />
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                   <div className="flex justify-between items-center mb-3">
                     <h4 className="font-semibold text-sm">Sizes & Stock</h4>
-                    <button type="button" onClick={addEditSize} className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded-lg flex items-center gap-1"><Plus size={14}/> Add</button>
+                    <button type="button" onClick={addEditSize} className="text-xs bg-[#C19A6B] hover:bg-[#A97A4D] text-white px-3 py-1.5 rounded-lg flex items-center gap-1"><Plus size={14}/> Add</button>
                   </div>
                   <div className="space-y-2">
                     {editForm.sizes.map((item, index) => (
                       <div key={index} className="flex gap-2 items-center">
-                        <select value={item.size} onChange={(e) => handleEditSizeChange(index, "size", e.target.value)} className="w-1/3 border rounded-lg p-2 text-sm outline-none">
+                        <select value={item.size} onChange={(e) => handleEditSizeChange(index, "size", e.target.value)} className="w-1/3 border rounded-lg p-2 text-sm outline-none bg-white">
                           <option value="XS">XS</option><option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option><option value="XXL">XXL</option>
                         </select>
-                        <input type="number" placeholder="Stock" value={item.stock} onChange={(e) => handleEditSizeChange(index, "stock", e.target.value)} className="w-1/3 border rounded-lg p-2 text-sm outline-none" required />
+                        <input type="number" placeholder="Stock" value={item.stock} onChange={(e) => handleEditSizeChange(index, "stock", e.target.value)} className="w-1/3 border rounded-lg p-2 text-sm outline-none bg-white" required />
                         <button type="button" onClick={() => removeEditSize(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <label className="flex items-center gap-2 cursor-pointer bg-blue-50 p-3 rounded-xl border border-blue-100">
-                  <input type="checkbox" name="isVirtualTryOnEnabled" checked={editForm.isVirtualTryOnEnabled} onChange={handleEditChange} className="w-4 h-4 text-blue-600" />
+                <label className="flex items-center gap-2 cursor-pointer bg-[#C19A6B]/10 p-3 rounded-xl border border-[#C19A6B]/20">
+                  <input type="checkbox" name="isVirtualTryOnEnabled" checked={editForm.isVirtualTryOnEnabled} onChange={handleEditChange} className="w-4 h-4 text-[#C19A6B] rounded border-gray-300 focus:ring-[#C19A6B]" />
                   <span className="text-sm font-semibold text-gray-700">Enable Virtual Try-On for this product</span>
                 </label>
 
@@ -517,7 +553,7 @@ export default function ListProduct() {
               <button onClick={() => setEditingProduct(null)} className="px-5 py-2.5 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold transition">
                 Cancel
               </button>
-              <button type="submit" form="editProductForm" disabled={updateLoading} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-sm font-semibold shadow-md transition flex items-center gap-2">
+              <button type="submit" form="editProductForm" disabled={updateLoading} className="px-6 py-2.5 bg-[#C19A6B] hover:bg-[#A97A4D] disabled:bg-[#C19A6B]/50 text-white rounded-xl text-sm font-semibold shadow-md transition flex items-center gap-2">
                 {updateLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : "Save Changes"}
               </button>
             </div>

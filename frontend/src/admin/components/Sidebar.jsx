@@ -41,7 +41,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const navClass = ({ isActive }) =>
     `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
       isActive
-        ? "bg-blue-600 text-white shadow-lg"
+        ? "bg-[#C19A6B] text-white shadow-lg"
         : "text-gray-300 hover:bg-gray-800 hover:text-white"
     }`;
 
@@ -70,7 +70,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
 
           <div className="flex items-center gap-2">
 
-            <div className="bg-blue-600 p-2 rounded-lg">
+            <div className="bg-[#C19A6B] p-2 rounded-lg">
               <Package
                 size={20}
                 className="text-white"
@@ -123,7 +123,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
 
         <div className="h-16 flex items-center gap-3 px-6 border-b border-gray-800">
 
-          <div className="bg-blue-600 p-2 rounded-lg">
+          <div className="bg-[#C19A6B] p-2 rounded-lg">
 
             <Package
               size={20}
@@ -135,7 +135,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           <div>
 
             <h1 className="text-white font-bold text-lg">
-              Store Admin
+              Trylo Admin
             </h1>
 
             <p className="text-gray-400 text-xs">

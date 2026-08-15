@@ -16,7 +16,7 @@ export default function AddProduct() {
     subcategory: "",
     styleType: "eastern",
     productType: "normal",
-    status: "new", // 👈 Updated default status to match model enum
+    status: "new",
     sizes: [{ size: "S", stock: "" }],
     isVirtualTryOnEnabled: false,
   });
@@ -85,7 +85,6 @@ export default function AddProduct() {
     setLoading(true);
     const formData = new FormData();
 
-    // Explicitly append all regular product fields
     formData.append("name", product.name);
     formData.append("sku", product.sku);
     formData.append("description", product.description);
@@ -99,7 +98,6 @@ export default function AddProduct() {
     formData.append("isVirtualTryOnEnabled", product.isVirtualTryOnEnabled);
     formData.append("sizes", JSON.stringify(product.sizes));
 
-    // Explicitly append image files as image1, image2, image3
     if (files[0]) formData.append("image1", files[0]);
     if (files[1]) formData.append("image2", files[1]);
     if (files[2]) formData.append("image3", files[2]);
@@ -141,16 +139,29 @@ export default function AddProduct() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <style>{`
+        select {
+          accent-color: #C19A6B;
+        }
+        select option {
+          padding: 10px;
+        }
+        select option:checked {
+          background: #C19A6B linear-gradient(0deg, #C19A6B 0%, #C19A6B 100%);
+          color: white;
+        }
+      `}</style>
+
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
         
         {/* Header Banner */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-6 md:px-8 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-[#C19A6B] to-[#A97A4D] px-6 py-6 md:px-8 flex items-center justify-between">
           <div>
             <h2 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-2">
-              <Sparkles className="w-7 h-7 text-yellow-300" />
+              <Sparkles className="w-7 h-7 text-white" />
               Add New Product
             </h2>
-            <p className="text-blue-100 text-sm mt-1">
+            <p className="text-[#F5EBE0] text-sm mt-1">
               Fill in the details below to list a new item in your inventory.
             </p>
           </div>
@@ -169,8 +180,8 @@ export default function AddProduct() {
                   key={i}
                   className={`border-2 border-dashed rounded-2xl h-52 cursor-pointer flex flex-col items-center justify-center transition-all duration-300 relative overflow-hidden group ${
                     previews[i]
-                      ? "border-blue-500 bg-blue-50/20 shadow-md"
-                      : "border-gray-300 hover:border-blue-400 bg-gray-50/50 hover:bg-gray-50"
+                      ? "border-[#C19A6B] bg-[#C19A6B]/20 shadow-md"
+                      : "border-gray-300 hover:border-[#C19A6B] bg-gray-50/50 hover:bg-gray-50"
                   }`}
                 >
                   {previews[i] ? (
@@ -186,7 +197,7 @@ export default function AddProduct() {
                     </>
                   ) : (
                     <>
-                      <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                      <div className="w-12 h-12 rounded-full bg-[#C19A6B] text-white flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                         <ImagePlus size={24} />
                       </div>
                       <p className="text-sm font-medium text-gray-700">
@@ -220,7 +231,7 @@ export default function AddProduct() {
                   value={product.name}
                   placeholder="e.g. Elegant Silk Kurta"
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#C19A6B] focus:border-transparent transition"
                   required
                 />
               </div>
@@ -232,7 +243,7 @@ export default function AddProduct() {
                   value={product.sku}
                   placeholder="e.g. M-SILK-01"
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#C19A6B] focus:border-transparent transition"
                   required
                 />
               </div>
@@ -245,7 +256,7 @@ export default function AddProduct() {
                   value={product.price}
                   placeholder="e.g. 4500"
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#C19A6B] focus:border-transparent transition"
                   required
                 />
               </div>
@@ -258,7 +269,7 @@ export default function AddProduct() {
                   value={product.oldPrice}
                   placeholder="e.g. 6000"
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#C19A6B] focus:border-transparent transition"
                 />
               </div>
 
@@ -268,7 +279,7 @@ export default function AddProduct() {
                   name="category"
                   value={product.category}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
+                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#C19A6B] focus:border-transparent transition bg-white"
                 >
                   <option value="men">Men</option>
                   <option value="women">Women</option>
@@ -284,7 +295,7 @@ export default function AddProduct() {
                   value={product.subcategory}
                   placeholder="e.g. Kurta Shalwar"
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#C19A6B] focus:border-transparent transition"
                   required
                 />
               </div>
@@ -295,7 +306,7 @@ export default function AddProduct() {
                   name="styleType"
                   value={product.styleType}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
+                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#C19A6B] focus:border-transparent transition bg-white"
                 >
                   <option value="eastern">Eastern</option>
                   <option value="western">Western</option>
@@ -308,7 +319,7 @@ export default function AddProduct() {
                   name="productType"
                   value={product.productType}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
+                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#C19A6B] focus:border-transparent transition bg-white"
                 >
                   <option value="normal">Normal</option>
                   <option value="featured">Featured</option>
@@ -322,7 +333,7 @@ export default function AddProduct() {
                   name="status"
                   value={product.status}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white capitalize"
+                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#C19A6B] focus:border-transparent transition bg-white capitalize"
                 >
                   <option value="new">New</option>
                   <option value="sale">Sale</option>
@@ -343,7 +354,7 @@ export default function AddProduct() {
               value={product.description}
               onChange={handleChange}
               placeholder="Write a detailed description about the product..."
-              className="w-full border border-gray-300 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
+              className="w-full border border-gray-300 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-[#C19A6B] focus:border-transparent transition resize-none"
               required
             />
           </div>
@@ -360,7 +371,7 @@ export default function AddProduct() {
               <button
                 type="button"
                 onClick={addSize}
-                className="flex items-center gap-2 bg-gray-900 hover:bg-black text-white text-sm font-medium px-4 py-2 rounded-xl transition shadow-sm"
+                className="flex items-center gap-2 bg-[#C19A6B] hover:bg-[#A97A4D] text-white text-sm font-medium px-4 py-2 rounded-xl transition shadow-sm"
               >
                 <Plus size={16} />
                 Add Size
@@ -374,7 +385,7 @@ export default function AddProduct() {
                     <select
                       value={item.size}
                       onChange={(e) => handleSizeChange(index, "size", e.target.value)}
-                      className="w-full border border-gray-300 rounded-xl p-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-xl p-3 bg-white focus:outline-none focus:ring-2 focus:ring-[#C19A6B]"
                     >
                       <option value="XS">XS</option>
                       <option value="S">S</option>
@@ -391,7 +402,7 @@ export default function AddProduct() {
                       placeholder="Stock quantity"
                       value={item.stock}
                       onChange={(e) => handleSizeChange(index, "stock", e.target.value)}
-                      className="w-full border border-gray-300 rounded-xl p-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-xl p-3 bg-white focus:outline-none focus:ring-2 focus:ring-[#C19A6B]"
                       required
                     />
                   </div>
@@ -412,14 +423,14 @@ export default function AddProduct() {
           </div>
 
           {/* Virtual Try On Checkbox */}
-          <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4">
+          <div className="bg-[#C19A6B]/20 border border-[#C19A6B]/30 rounded-2xl p-4">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 name="isVirtualTryOnEnabled"
                 checked={product.isVirtualTryOnEnabled}
                 onChange={handleChange}
-                className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                className="w-5 h-5 text-[#C19A6B] rounded border-gray-300 focus:ring-[#C19A6B]"
               />
               <div>
                 <span className="font-semibold text-gray-800 text-sm">Enable Virtual Try-On</span>
@@ -433,7 +444,7 @@ export default function AddProduct() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 transition text-white font-semibold px-10 py-4 rounded-xl shadow-lg flex items-center justify-center gap-2"
+              className="w-full md:w-auto bg-[#C19A6B] hover:bg-[#A97A4D] disabled:bg-[#C19A6B]/50 transition text-white font-semibold px-10 py-4 rounded-xl shadow-lg flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>

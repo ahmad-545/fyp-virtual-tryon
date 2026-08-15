@@ -42,11 +42,11 @@ const Navbar = ({ setSidebarOpen }) => {
 
           <div className="hidden md:flex items-center gap-2">
 
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-[#C19A6B] flex items-center justify-center">
 
               <ShieldCheck
                 size={20}
-                className="text-blue-600"
+                className="text-white"
               />
 
             </div>
