@@ -8,6 +8,7 @@ import AdminContext from './admin/context/AdminContext.jsx';
 // Admin & User Components
 import AdminApp from './admin/Adminapp.jsx';
 import Navbar from './components/Navbar.jsx';
+import AnnouncementSlider from './Pages/AnnouncementSlider.jsx'; // 🔴 1. Import AnnouncementSlider
 
 import LoadingPage from './Pages/LoadingPage.jsx'; 
 import Home from './Pages/Home.jsx';
@@ -34,20 +35,19 @@ function App() {
           {/* Admin routes (No website Navbar/Footer) */}
           <Route path="/admin/*" element={<AdminApp />} />
 
-          {/* User routes with Navbar, Footer, and Chatbot */}
+          {/* User routes with Announcement Slider, Navbar, Footer, and Chatbot */}
           <Route
             path="/*"
             element={
               <div className="flex flex-col min-h-screen">
+                {/* 🔴 2. Announcement Slider ko Navbar se bilkul upar rakh diya hai */}
+                <AnnouncementSlider />
                 <Navbar />
+                
                 <main className="flex-grow">
                   <Routes>
-              
                     <Route path="/" element={<LoadingPage />} />
-                    
-             
                     <Route path="/home" element={<Home />} />
-                    
                     <Route path="/shop" element={<ProductGrid />} />
                     <Route path="/product/:id" element={<ProductDetail />} />
                     <Route path="/checkout" element={<Checkout />} />

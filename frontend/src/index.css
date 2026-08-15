@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+/* Apni global CSS file (e.g., index.css) mein ye add kar dein */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
