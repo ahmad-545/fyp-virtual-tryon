@@ -15,14 +15,14 @@ function AnnouncementSlider() {
         {announcements.map((text, index) => (
           <div key={index} className="flex items-center text-xs md:text-sm font-medium tracking-wide uppercase px-8">
             <span>{text}</span>
-            <span className="mx-8 text-red-300">|</span>
+            <span className="mx-8 text-white">|</span>
           </div>
         ))}
         {/* Duplicate set for smooth infinite loop effect */}
         {announcements.map((text, index) => (
           <div key={`dup-${index}`} className="flex items-center text-xs md:text-sm font-medium tracking-wide uppercase px-8">
             <span>{text}</span>
-            <span className="mx-8 text-red-300">|</span>
+            <span className="mx-8 text-white">|</span>
           </div>
         ))}
       </div>

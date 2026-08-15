@@ -266,7 +266,8 @@ export default function ProductGrid() {
               <p className="text-gray-400 font-medium text-xs tracking-[2px] uppercase">Synchronizing Display Engine...</p>
             </div>
           ) : products.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-12 sm:gap-x-6 sm:gap-y-14">
+            /* Updated Grid layout: Exactly 4 cards per row on large screens */
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-12 sm:gap-x-6 sm:gap-y-14">
               {products.map((item) => {
                 const imageUrl = item.images?.[0]?.url || item.images?.[0] || "https://placehold.co/600x800?text=No+Image";
                 const secondImageUrl = item.images?.[1]?.url || item.images?.[1] || imageUrl;
@@ -303,8 +304,33 @@ export default function ProductGrid() {
                         </span>
                       )}
 
+                      {/* Mobile / Responsive Vertical Floating Circular Buttons with Hover Effect */}
+                      <div className="absolute bottom-3 right-3 flex flex-col gap-2 z-20 sm:hidden">
+                        <button
+                          type="button"
+                          onClick={(e) => handleAddToCart(e, item)}
+                          className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-md text-gray-900 flex items-center justify-center hover:bg-[#C19A6B] hover:text-white hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer"
+                          title="Add to Basket"
+                        >
+                          <AiOutlineShoppingCart className="text-base" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/virtual-room`, { state: { product: item } });
+                          }}
+                          className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-md text-gray-900 flex items-center justify-center hover:bg-[#C19A6B] hover:text-white hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer"
+                          title="Virtual Try-On"
+                        >
+                          <AiOutlineCamera className="text-base" />
+                        </button>
+                      </div>
+
+                      {/* Desktop Hover Action Bar */}
                       <div
-                        className={`absolute bottom-0 left-0 right-0 grid grid-cols-2 gap-[1px] bg-gray-200 shadow-2xl transition-all duration-300 z-10 ${
+                        className={`absolute bottom-0 left-0 right-0 hidden sm:grid grid-cols-2 gap-[1px] bg-gray-200 shadow-2xl transition-all duration-300 z-10 ${
                           hoveredId === item._id ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
                         }`}
                       >
@@ -318,16 +344,16 @@ export default function ProductGrid() {
                         </button>
 
                         <button
-  onClick={(e) => {
-    e.stopPropagation();
-    // Navigate to virtual-room and pass the product details using state
-    navigate(`/virtual-room`, { state: { product: item } });
-  }}
-  className="bg-gray-900 hover:bg-[#C19A6B] py-3 px-2 text-[11px] font-bold uppercase tracking-wider text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
->
-  <AiOutlineCamera className="text-sm text-[#C19A6B] group-hover:text-white" />
-  <span>Try</span>
-</button>
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/virtual-room`, { state: { product: item } });
+                          }}
+                          className="bg-gray-900 hover:bg-[#C19A6B] py-3 px-2 text-[11px] font-bold uppercase tracking-wider text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <AiOutlineCamera className="text-sm text-[#C19A6B] group-hover:text-white" />
+                          <span>Try</span>
+                        </button>
                       </div>
                     </div>
 
