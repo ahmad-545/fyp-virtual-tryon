@@ -8,6 +8,8 @@ import {
   updateProduct,
   removeProduct,
   addReview,
+  deleteReview,
+  toggleReviewStatus,
 } from "../controllers/productController.js";
 
 const productRoutes = express.Router();
@@ -35,7 +37,12 @@ productRoutes.get("/", listProduct);
 // ============================================
 productRoutes.get("/:id", singleProduct);
 
+// ============================================
+// REVIEWS (ADD, DELETE & TOGGLE STATUS)
+// ============================================
 productRoutes.post("/:id/reviews", addReview);
+productRoutes.delete("/:productId/reviews/:reviewId", deleteReview);
+productRoutes.put("/:productId/reviews/:reviewId/toggle", toggleReviewStatus);
 
 // ============================================
 // UPDATE PRODUCT

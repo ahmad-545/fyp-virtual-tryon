@@ -28,7 +28,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     {
       name: "Products",
       icon: ListChecks,
-      path:"/admin/list-products"
+      path: "/admin/list-products"
     },
 
     {
@@ -36,6 +36,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
       icon: PackageSearch,
       path: "/admin/orders",
     },
+    {
+      name: "Reviews",
+      icon: Package,
+      path: "/admin/reviews" // 👈 Corrected path to match admin sub-routing structure
+    }
   ];
 
   const navClass = ({ isActive }) =>

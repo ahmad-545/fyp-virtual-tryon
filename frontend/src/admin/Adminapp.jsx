@@ -7,6 +7,7 @@ import AdminLogin from './pages/AdminLogin.jsx';
 import AddProduct from './pages/AddProduct.jsx';
 import ListProducts from './pages/ListProduct.jsx';
 import AdminOrders from './pages/AdminOrders.jsx';
+import AdminReviews from './pages/AdminReviews.jsx';
 
 
 const AdminApp = () => {
@@ -31,6 +32,7 @@ const AdminApp = () => {
                 <Route path="/list-products" element={<ListProducts />} />
                 
               <Route path="/orders" element={<AdminOrders />} />
+              <Route path="/reviews" element={<AdminReviews />} />
 
 
              

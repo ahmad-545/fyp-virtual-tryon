@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 
 const reviewSchema = new mongoose.Schema(
   {
-   user: {
-      type: String, // ObjectId ki jagah yahan String kar dein
+    user: {
+      type: String, // Guest user name / reviewer name
       required: true,
       trim: true,
     },
@@ -18,6 +18,12 @@ const reviewSchema = new mongoose.Schema(
     comment: {
       type: String,
       default: "",
+    },
+
+    // 👇 Admin control ke liye isApproved field add kar di gayi hai (Default false)
+    isApproved: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }
@@ -158,7 +164,7 @@ productSchema.index({
 
 // Auto Generate Slug & Calculate Total Stock
 productSchema.pre("save", function () {
- if (!this.slug) {
+  if (!this.slug) {
     this.slug = this.name
       .toLowerCase()
       .trim()

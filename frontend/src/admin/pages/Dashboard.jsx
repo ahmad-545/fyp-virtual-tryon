@@ -3,14 +3,14 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import {
   Package, ShoppingCart, DollarSign, TrendingUp, ArrowUpRight, 
-  Loader2, AlertCircle, Clock, CheckCircle, Truck
+  Loader2, AlertCircle, Clock, CheckCircle, Truck, MessageSquare
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
     totalProducts: 0, totalOrders: 0, revenue: 0,
-    pendingOrders: 0, deliveredOrders: 0,
+    pendingOrders: 0, deliveredOrders: 0, totalReviews: 0,
   });
   const [recentOrders, setRecentOrders] = useState([]);
   const [salesData, setSalesData] = useState([]);
@@ -31,6 +31,14 @@ const Dashboard = () => {
         const products = productsRes.data.products || [];
         const orders = ordersRes.data.orders || [];
 
+        // Count total reviews across all products
+        let reviewCount = 0;
+        products.forEach(product => {
+          if (product.reviews && product.reviews.length > 0) {
+            reviewCount += product.reviews.length;
+          }
+        });
+
         const totalRevenue = orders.reduce((acc, order) => acc + (order.totalAmount || 0), 0);
         const pending = orders.filter(o => o.orderStatus === "Processing").length;
         const delivered = orders.filter(o => o.orderStatus === "Delivered").length;
@@ -41,6 +49,7 @@ const Dashboard = () => {
           revenue: totalRevenue,
           pendingOrders: pending,
           deliveredOrders: delivered,
+          totalReviews: reviewCount,
         });
 
         setRecentOrders(orders.slice(0, 5));
@@ -74,7 +83,7 @@ const Dashboard = () => {
 
         const formattedMonthly = Object.keys(monthlyMap)
           .map(m => ({ name: m, sales: monthlyMap[m] }))
-          .filter(item => item.sales > 0); // Sirf woh mahine dikhayein jin mein sales hain
+          .filter(item => item.sales > 0);
 
         const formattedWeekly = Object.keys(weeklyMap).map(w => ({ name: w, sales: weeklyMap[w] }));
 
@@ -94,11 +103,13 @@ const Dashboard = () => {
     fetchDashboardData();
   }, [viewType]);
 
+  // 👇 Saare 5 cards yahan shamil hain (Products, Orders, Revenue, Pending, Reviews)
   const cards = [
     { title: "Total Products", value: stats.totalProducts, icon: Package, bg: "bg-[#C19A6B]/10 text-[#C19A6B]", border: "border-[#C19A6B]/20" },
     { title: "Total Orders", value: stats.totalOrders, icon: ShoppingCart, bg: "bg-emerald-50 text-emerald-600", border: "border-emerald-100" },
     { title: "Total Revenue", value: `Rs. ${stats.revenue.toLocaleString()}`, icon: DollarSign, bg: "bg-amber-50 text-amber-600", border: "border-amber-100" },
     { title: "Pending Orders", value: stats.pendingOrders, icon: Clock, bg: "bg-purple-50 text-purple-600", border: "border-purple-100" },
+    { title: "Customer Reviews", value: stats.totalReviews, icon: MessageSquare, bg: "bg-rose-50 text-rose-600", border: "border-rose-100" },
   ];
 
   if (loading) {
@@ -129,19 +140,19 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* CARDS GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      {/* CARDS GRID (Updated to 5 columns layout for desktop/tablet) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
         {cards.map((card, index) => {
           const Icon = card.icon;
           return (
-            <div key={index} className={`bg-white rounded-2xl shadow-sm border ${card.border} p-6 hover:shadow-md transition`}>
+            <div key={index} className={`bg-white rounded-2xl shadow-sm border ${card.border} p-5 hover:shadow-md transition`}>
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">{card.title}</p>
-                  <h2 className="text-2xl font-black text-gray-900 mt-2">{card.value}</h2>
+                  <p className="text-gray-400 text-[11px] font-bold uppercase tracking-wider">{card.title}</p>
+                  <h2 className="text-xl font-black text-gray-900 mt-2">{card.value}</h2>
                 </div>
-                <div className={`${card.bg} p-3.5 rounded-2xl`}>
-                  <Icon size={22} />
+                <div className={`${card.bg} p-3 rounded-xl`}>
+                  <Icon size={20} />
                 </div>
               </div>
             </div>
@@ -234,11 +245,11 @@ const Dashboard = () => {
 
             <div>
               <div className="flex justify-between text-xs font-bold uppercase tracking-wide text-gray-600 mb-1.5">
-                <span>Target Completion</span>
-                <span className="text-purple-600">85%</span>
+                <span>Customer Reviews</span>
+                <span className="text-rose-600">{stats.totalReviews}</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                <div className="bg-purple-600 h-2 rounded-full w-[85%]" />
+                <div className="bg-rose-500 h-2 rounded-full w-[60%]" />
               </div>
             </div>
           </div>

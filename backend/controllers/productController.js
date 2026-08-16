@@ -464,19 +464,22 @@ export const removeProduct = async (req, res) => {
   }
 };
 
+
 // ============================================
-// F. ADD / UPDATE REVIEW
+// F. ADD REVIEW (FINAL CHECKED)
 // ============================================
 
 export const addReview = async (req, res) => {
   try {
     const { id } = req.params;
-    const { user, rating, comment } = req.body;
+    const { user, name, rating, comment } = req.body;
 
-    if (!rating) {
+    const reviewerName = user || name;
+
+    if (!rating || !reviewerName) {
       return res.status(400).json({
         success: false,
-        message: "Rating is required.",
+        message: "Name and Rating are required.",
       });
     }
 
@@ -489,46 +492,98 @@ export const addReview = async (req, res) => {
       });
     }
 
-    // Existing review check
-    const existingReview = product.reviews.find(
-      (item) => item.user?.toString() === user
-    );
-
-    if (existingReview) {
-      existingReview.rating = Number(rating);
-      existingReview.comment = comment || "";
-    } else {
-      product.reviews.push({
-        user,
-        rating: Number(rating),
-        comment: comment || "",
-      });
-    }
-
-    // Average Rating
-    const totalRating = product.reviews.reduce(
-      (total, item) => total + item.rating,
-      0
-    );
-
-    product.averageRating =
-      product.reviews.length > 0
-        ? Number((totalRating / product.reviews.length).toFixed(1))
-        : 0;
+    product.reviews.push({
+      user: reviewerName,
+      rating: Number(rating),
+      comment: comment || "",
+      isApproved: false, // Default false (Pending approval)
+    });
 
     await product.save();
 
     return res.status(200).json({
       success: true,
-      message: "Review submitted successfully.",
-      averageRating: product.averageRating,
-      totalReviews: product.reviews.length,
+      message: "Review submitted successfully! Pending admin approval.",
       reviews: product.reviews,
     });
 
   } catch (error) {
-    console.log(error);
+    console.log("ADD REVIEW ERROR =>", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
+// ============================================
+// G. DELETE REVIEW (FOR MANAGING BAD/SPAM REVIEWS)
+// ============================================
+
+export const deleteReview = async (req, res) => {
+  try {
+    const { productId, reviewId } = req.params;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    // Filter out the review to be deleted
+    product.reviews = product.reviews.filter(
+      (rev) => rev._id.toString() !== reviewId
+    );
+
+    // Recalculate average rating if reviews exist
+    const totalRating = product.reviews.reduce((acc, item) => item.rating + acc, 0);
+    product.averageRating = product.reviews.length > 0 ? Number((totalRating / product.reviews.length).toFixed(1)) : 0;
+
+    await product.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Review deleted successfully.",
+    });
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ============================================
+// H. TOGGLE REVIEW STATUS (APPROVE / HIDE)
+// ============================================
+
+export const toggleReviewStatus = async (req, res) => {
+  try {
+    const { productId, reviewId } = req.params;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    const review = product.reviews.find((rev) => rev._id.toString() === reviewId);
+    if (!review) {
+      return res.status(404).json({ success: false, message: "Review not found" });
+    }
+
+    // Toggle isApproved status (true to false, false to true)
+    review.isApproved = !review.isApproved;
+
+    await product.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Review has been ${review.isApproved ? "Approved" : "Hidden"}.`,
+    });
+
+  } catch (error) {
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: error.message,

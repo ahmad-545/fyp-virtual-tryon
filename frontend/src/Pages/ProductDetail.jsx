@@ -113,7 +113,7 @@ export default function ProductDetail() {
 
     try {
       const reviewPayload = {
-        user: newReview.name,
+        user: newReview.name, // 👈 Schema ke mutabiq 'user' field pass ki gayi hai taake original name save ho
         rating: Number(newReview.rating),
         comment: newReview.comment,
       };
@@ -128,9 +128,9 @@ export default function ProductDetail() {
 
       const data = await res.json();
       if (data.success) {
-        setReviews(data.reviews); 
+        alert(data.message || "Review submitted successfully!");
         setNewReview({ name: "", rating: 5, comment: "" });
-        alert("Review submitted successfully!");
+        fetchProduct();
       } else {
         alert(data.message || "Failed to submit review.");
       }
@@ -163,18 +163,21 @@ export default function ProductDetail() {
   const currentPriceVal = Number(product.price);
   const hasValidOldPrice = !isNaN(oldPriceVal) && oldPriceVal > 0 && oldPriceVal > currentPriceVal;
 
-  const averageRating = reviews.length > 0 
-    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
+  // Sirf approved reviews ko display aur average rating ke liye filter karna
+  const approvedReviews = reviews.filter((r) => r.isApproved === true);
+
+  const averageRating = approvedReviews.length > 0 
+    ? (approvedReviews.reduce((acc, r) => acc + r.rating, 0) / approvedReviews.length).toFixed(1) 
     : (product.averageRating || 0);
 
   return (
     <section className="w-full bg-white py-12 px-4 sm:px-6 lg:px-12 overflow-hidden">
       
-      {/* 🎯 RESPONSIVE GRID SYSTEM */}
+      {/* 🎯 RESPONSIVE GRID SYSTEM (Fixed alignment so text and image stay balanced) */}
       <div className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
 
         {/* 🅰️ LEFT: GALLERY (Desktop 7, Mobile 12) */}
-        <div className="w-full lg:col-span-7 flex flex-col-reverse md:flex-row gap-4 lg:sticky lg:top-28">
+        <div className="w-full lg:col-span-7 flex flex-col-reverse md:flex-row gap-4">
           
           {/* Thumbnails */}
           <div className="flex flex-row md:flex-col gap-3 overflow-x-auto md:overflow-y-auto w-full md:w-24 pb-2 md:pb-0 shrink-0 custom-scrollbar">
@@ -232,7 +235,7 @@ export default function ProductDetail() {
               ))}
             </div>
             <span className="text-xs font-bold text-gray-800">{averageRating}</span>
-            <span className="text-xs text-gray-400">({reviews.length} customer reviews)</span>
+            <span className="text-xs text-gray-400">({approvedReviews.length} customer reviews)</span>
           </div>
 
           {/* Description */}
@@ -326,13 +329,13 @@ export default function ProductDetail() {
           
           {/* Left: Reviews List */}
           <div className="lg:col-span-7 space-y-6">
-            <h3 className="text-xl font-serif font-extrabold text-gray-900 uppercase tracking-tight">Customer Reviews ({reviews.length})</h3>
+            <h3 className="text-xl font-serif font-extrabold text-gray-900 uppercase tracking-tight">Customer Reviews ({approvedReviews.length})</h3>
             
             <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-              {reviews.length === 0 ? (
-                <p className="text-xs text-gray-400 font-light">No reviews yet. Be the first to review this product!</p>
+              {approvedReviews.length === 0 ? (
+                <p className="text-xs text-gray-400 font-light">No reviews yet or pending admin approval. Be the first to review this product!</p>
               ) : (
-                reviews.map((rev, index) => (
+                approvedReviews.map((rev, index) => (
                   <div key={rev._id || index} className="bg-gray-50 border border-gray-100 p-5 rounded-2xl">
                     <div className="flex justify-between items-center mb-2">
                       <h4 className="font-bold text-xs uppercase tracking-wider text-gray-900">{rev.user || "Anonymous"}</h4>
@@ -447,16 +450,15 @@ export default function ProductDetail() {
                       </button>
 
                      <button
-  onClick={(e) => {
-    e.stopPropagation();
-    // Navigate to virtual-room and pass the product details using state
-    navigate(`/virtual-room`, { state: { product: item } });
-  }}
-  className="bg-gray-900 hover:bg-[#C19A6B] py-3 px-2 text-[11px] font-bold uppercase tracking-wider text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
->
-  <AiOutlineCamera className="text-sm text-[#C19A6B] group-hover:text-white" />
-  <span>Try</span>
-</button>
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/virtual-room`, { state: { product: item } });
+                        }}
+                        className="bg-gray-900 hover:bg-[#C19A6B] py-3 px-2 text-[11px] font-bold uppercase tracking-wider text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <AiOutlineCamera className="text-sm text-[#C19A6B] group-hover:text-white" />
+                        <span>Try</span>
+                      </button>
                     </div>
                   </div>
 
