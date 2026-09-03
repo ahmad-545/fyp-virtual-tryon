@@ -68,10 +68,10 @@ export const handleBotChat = async (req, res) => {
       role: "user",
       content: message,
     });
-
+console.log("🔥 CURRENT MODEL:", "llama-3.1-8b-instant");
     const chatCompletion = await groq.chat.completions.create({
       messages: apiMessages,
-      model: "llama3-8b-8192",
+      model: "openai/gpt-oss-120b",
       temperature: 0.3,
       max_tokens: 300,
     });
