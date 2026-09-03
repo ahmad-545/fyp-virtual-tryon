@@ -1,8 +1,10 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import { MessageSquare, X, Send, Bot, Sparkles, Loader2 } from "lucide-react";
 import axios from "axios";
+import { AuthDataContext } from "../context/AuthContext";
 
 export default function Chatbot() {
+  const { serverUrl } = useContext(AuthDataContext);
   const [isOpen, setIsOpen] = useState(false);
   
   const welcomeMessage = `Hello! 👋 Welcome to "Trylo" Premium Store. 
@@ -39,7 +41,9 @@ How can I assist you today? 👇`;
     setLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:8000/api/chat", { message: userMessage });
+      const res = await axios.post(`${serverUrl}/api/chat`, { message: userMessage }, {
+        withCredentials: true
+      });
       if (res.data.success) {
         setMessages((prev) => [...prev, { sender: "bot", text: res.data.reply }]);
       } else {
