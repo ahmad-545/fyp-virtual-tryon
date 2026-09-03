@@ -71,7 +71,7 @@ export const handleBotChat = async (req, res) => {
 
     const chatCompletion = await groq.chat.completions.create({
       messages: apiMessages,
-      model: "llama-3.3-70b-versatile",
+      model: "llama-3.1-8b-instant",
       temperature: 0.3,
       max_tokens: 300,
     });
