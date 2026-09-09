@@ -1,11 +1,20 @@
 from fastapi import FastAPI, HTTPException
 import asyncio
+from fastapi.middleware.cors import CORSMiddleware
 from models import ProcessGarmentRequest, ProcessGarmentResponse, TryOnRequest, TryOnResponse
 
 app = FastAPI(
     title="Virtual Try-On AI Server",
     description="API for Garment Segmentation and Virtual Try-On",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/")
