@@ -590,3 +590,114 @@ export const toggleReviewStatus = async (req, res) => {
     });
   }
 };
+
+// ============================================
+// I. QUICK INVENTORY / STOCK UPDATE
+// ============================================
+
+export const updateProductInventory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { sizes } = req.body;
+
+    if (!sizes || !Array.isArray(sizes)) {
+      return res.status(400).json({
+        success: false,
+        message: "Sizes array is required.",
+      });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found.",
+      });
+    }
+
+    // Update sizes with non-negative stock numbers
+    product.sizes = sizes.map(item => ({
+      size: item.size,
+      stock: Math.max(0, Number(item.stock) || 0)
+    }));
+
+    // Calculate total stock
+    const newTotalStock = product.sizes.reduce(
+      (sum, item) => sum + Number(item.stock || 0),
+      0
+    );
+    product.totalStock = newTotalStock;
+
+    // Auto-update status if out of stock or restocked
+    if (newTotalStock === 0) {
+      product.status = "sold";
+    } else if (product.status === "sold") {
+      product.status = "normal";
+    }
+
+    await product.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Inventory updated successfully.",
+      product,
+    });
+  } catch (error) {
+    console.error("Inventory update error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ============================================
+// J. GET INVENTORY SUMMARY & ANALYTICS
+// ============================================
+
+export const getInventorySummary = async (req, res) => {
+  try {
+    const products = await Product.find({}, "name sku price category totalStock sizes images status");
+
+    let totalStockUnits = 0;
+    let totalInventoryValue = 0;
+    let outOfStockCount = 0;
+    let lowStockCount = 0;
+    const lowStockItems = [];
+
+    products.forEach((p) => {
+      const stock = Number(p.totalStock) || 0;
+      const price = Number(p.price) || 0;
+
+      totalStockUnits += stock;
+      totalInventoryValue += stock * price;
+
+      if (stock === 0) {
+        outOfStockCount++;
+        lowStockItems.push(p);
+      } else if (stock <= 5) {
+        lowStockCount++;
+        lowStockItems.push(p);
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      summary: {
+        totalProducts: products.length,
+        totalStockUnits,
+        totalInventoryValue,
+        outOfStockCount,
+        lowStockCount,
+        healthyStockCount: products.length - outOfStockCount - lowStockCount,
+      },
+      lowStockItems: lowStockItems.slice(0, 10),
+    });
+  } catch (error) {
+    console.error("Inventory summary error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

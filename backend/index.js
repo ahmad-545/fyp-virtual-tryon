@@ -41,6 +41,7 @@ app.use("/api/admin", adminRoute);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/subscriber", subscriberRouter);
+app.use("/api/subscribers", subscriberRouter);
 app.use("/api", chatRouter);
 
 // Test Route

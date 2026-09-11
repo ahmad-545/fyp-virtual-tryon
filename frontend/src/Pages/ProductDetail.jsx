@@ -45,7 +45,9 @@ export default function ProductDetail() {
         setProduct(p);
         const firstImg = p.images?.[0]?.url || p.images?.[0] || "";
         setMainImage(firstImg);
-        setSelectedSize(p.sizes?.[0]?.size || "M");
+        // Prioritize first size with available stock
+        const firstInStock = p.sizes?.find((s) => (Number(s.stock) || 0) > 0);
+        setSelectedSize(firstInStock ? firstInStock.size : (p.sizes?.[0]?.size || "M"));
         if (p.reviews) setReviews(p.reviews);
         if (p.category) fetchRelatedProducts(p.category);
       }
@@ -244,82 +246,129 @@ export default function ProductDetail() {
           </div>
           
           {/* SIZES */}
-          {product.sizes && product.sizes.length > 0 && (
-            <div className="mb-8">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900">Select Size</h3>
-                <span 
-                  onClick={() => setIsSizeGuideOpen(true)}
-                  className="text-[11px] text-[#C19A6B] font-semibold cursor-pointer hover:underline"
-                >
-                  Size Guide
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                {product.sizes.map((item, index) => (
+          {(() => {
+            const currentSizeObj = product.sizes?.find((s) => s.size === selectedSize);
+            const currentSizeStock = currentSizeObj ? (Number(currentSizeObj.stock) || 0) : (Number(product.totalStock) || 0);
+            const isOutOfStock = (Number(product.totalStock) || 0) === 0 || currentSizeStock === 0;
+
+            return (
+              <>
+                {product.sizes && product.sizes.length > 0 && (
+                  <div className="mb-8">
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900">Select Size</h3>
+                        {currentSizeStock > 0 && currentSizeStock <= 3 && (
+                          <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full animate-pulse">
+                            Only {currentSizeStock} left!
+                          </span>
+                        )}
+                      </div>
+                      <span 
+                        onClick={() => setIsSizeGuideOpen(true)}
+                        className="text-[11px] text-[#C19A6B] font-semibold cursor-pointer hover:underline"
+                      >
+                        Size Guide
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {product.sizes.map((item, index) => {
+                        const isSoldOut = (Number(item.stock) || 0) === 0;
+                        return (
+                          <button 
+                            key={index} 
+                            type="button"
+                            onClick={() => {
+                              setSelectedSize(item.size);
+                              setQuantity(1);
+                            }} 
+                            className={`relative border px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                              selectedSize === item.size 
+                                ? "bg-black text-white border-black shadow-md" 
+                                : isSoldOut
+                                ? "bg-gray-50 text-gray-400 border-gray-200 line-through opacity-60"
+                                : "bg-white text-gray-800 border-gray-200 hover:border-black"
+                            }`}
+                            title={isSoldOut ? `Size ${item.size} is Sold Out` : `Size ${item.size}: ${item.stock} in stock`}
+                          >
+                            <span>{item.size}</span>
+                            {isSoldOut && (
+                              <span className="text-[9px] no-underline font-normal text-rose-500 font-sans">
+                                (Sold)
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* QUANTITY */}
+                <div className="mb-8">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">Quantity</h3>
+                  <div className="flex items-center border border-gray-200 w-fit rounded-xl overflow-hidden bg-white shadow-sm">
+                    <button 
+                      type="button"
+                      disabled={isOutOfStock || quantity <= 1}
+                      onClick={() => setQuantity(q => Math.max(1, q - 1))} 
+                      className="w-11 h-11 flex items-center justify-center hover:bg-gray-100 transition text-gray-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <AiOutlineMinus />
+                    </button>
+                    <span className="w-12 text-center text-xs font-bold text-gray-900">{isOutOfStock ? 0 : quantity}</span>
+                    <button 
+                      type="button"
+                      disabled={isOutOfStock || (currentSizeStock > 0 && quantity >= currentSizeStock)}
+                      onClick={() => setQuantity(q => Math.min(currentSizeStock || 1, q + 1))} 
+                      className="w-11 h-11 flex items-center justify-center hover:bg-gray-100 transition text-gray-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <AiOutlinePlus />
+                    </button>
+                  </div>
+                </div>
+
+                {/* ACTIONS */}
+                <div className="flex flex-col sm:flex-row gap-3.5 mb-8">
                   <button 
-                    key={index} 
                     type="button"
-                    onClick={() => setSelectedSize(item.size)} 
-                    className={`border px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      selectedSize === item.size 
-                        ? "bg-black text-white border-black shadow-md" 
-                        : "bg-white text-gray-800 border-gray-200 hover:border-black"
+                    disabled={isOutOfStock}
+                    onClick={handleAddToCart} 
+                    className={`flex-[2] py-4 rounded-xl flex items-center justify-center gap-2.5 transition shadow-lg text-xs font-bold uppercase tracking-widest ${
+                      isOutOfStock 
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none" 
+                        : "bg-black text-white hover:bg-gray-800 cursor-pointer"
                     }`}
                   >
-                    {item.size}
+                    <AiOutlineShoppingCart className="text-base" /> {isOutOfStock ? "Out of Stock" : "Add To Cart"}
                   </button>
-                ))}
-              </div>
-            </div>
-          )}
+                  <button 
+                    type="button"
+                    onClick={() => setIsModalOpen(true)} 
+                    className="flex-1 bg-[#C19A6B] text-white py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-[#a88255] transition text-xs font-bold uppercase tracking-widest shadow-md cursor-pointer"
+                  >
+                    <Sparkles size={16} /> Try On Cloth
+                  </button>
+                </div>
 
-          {/* QUANTITY */}
-          <div className="mb-8">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">Quantity</h3>
-            <div className="flex items-center border border-gray-200 w-fit rounded-xl overflow-hidden bg-white shadow-sm">
-              <button 
-                type="button"
-                onClick={() => setQuantity(q => Math.max(1, q - 1))} 
-                className="w-11 h-11 flex items-center justify-center hover:bg-gray-100 transition text-gray-600 cursor-pointer"
-              >
-                <AiOutlineMinus />
-              </button>
-              <span className="w-12 text-center text-xs font-bold text-gray-900">{quantity}</span>
-              <button 
-                type="button"
-                onClick={() => setQuantity(q => q + 1)} 
-                className="w-11 h-11 flex items-center justify-center hover:bg-gray-100 transition text-gray-600 cursor-pointer"
-              >
-                <AiOutlinePlus />
-              </button>
-            </div>
-          </div>
-
-          {/* ACTIONS */}
-          <div className="flex flex-col sm:flex-row gap-3.5 mb-8">
-            <button 
-              type="button"
-              onClick={handleAddToCart} 
-              className="flex-[2] bg-black text-white py-4 rounded-xl flex items-center justify-center gap-2.5 hover:bg-gray-800 transition shadow-lg text-xs font-bold uppercase tracking-widest cursor-pointer"
-            >
-              <AiOutlineShoppingCart className="text-base" /> Add To Cart
-            </button>
-            <button 
-              type="button"
-              onClick={() => setIsModalOpen(true)} 
-              className="flex-1 bg-[#C19A6B] text-white py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-[#a88255] transition text-xs font-bold uppercase tracking-widest shadow-md cursor-pointer"
-            >
-              <Sparkles size={16} /> Try On Cloth
-            </button>
-          </div>
-
-          {/* ADDITIONAL DETAILS */}
-          <div className="border-t border-gray-100 pt-6 text-xs text-gray-500 space-y-2 font-medium">
-            <p><strong className="text-gray-900 uppercase">Style:</strong> {product.styleType || "Standard"}</p>
-            <p><strong className="text-gray-900 uppercase">Category:</strong> {product.subcategory || product.category}</p>
-            <p><strong className="text-gray-900 uppercase">Availability:</strong> <span className="text-emerald-600 font-bold">In Stock</span></p>
-          </div>
+                {/* ADDITIONAL DETAILS */}
+                <div className="border-t border-gray-100 pt-6 text-xs text-gray-500 space-y-2 font-medium">
+                  <p><strong className="text-gray-900 uppercase">Style:</strong> {product.styleType || "Standard"}</p>
+                  <p><strong className="text-gray-900 uppercase">Category:</strong> {product.subcategory || product.category}</p>
+                  <p className="flex items-center gap-2">
+                    <strong className="text-gray-900 uppercase">Availability:</strong>
+                    {isOutOfStock ? (
+                      <span className="text-rose-600 font-bold bg-rose-50 px-2.5 py-0.5 rounded-full text-xs">Out of Stock</span>
+                    ) : currentSizeStock <= 3 ? (
+                      <span className="text-amber-600 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full text-xs">Low Stock ({currentSizeStock} units left)</span>
+                    ) : (
+                      <span className="text-emerald-600 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full text-xs">In Stock ({currentSizeStock} available)</span>
+                    )}
+                  </p>
+                </div>
+              </>
+            );
+          })()}
         </div>
       </div>
 

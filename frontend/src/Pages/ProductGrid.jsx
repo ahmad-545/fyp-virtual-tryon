@@ -318,69 +318,102 @@ export default function ProductGrid() {
                         className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                       />
                       
-                      {item.status && item.status !== "normal" && (
-                        <span className={`absolute top-3 left-3 text-white text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-md shadow-sm z-10 ${
-                          item.status === "sale" 
-                            ? "bg-rose-600" 
-                            : item.status === "new" 
-                            ? "bg-[#C19A6B]" 
-                            : "bg-gray-800"
-                        }`}>
-                          {item.status}
-                        </span>
-                      )}
+                      {(() => {
+                        const isSoldOut = (Number(item.totalStock) || 0) === 0 || item.status === "sold";
+                        if (isSoldOut) {
+                          return (
+                            <span className="absolute top-3 left-3 bg-gray-900/95 backdrop-blur-sm text-white text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-md shadow-sm z-10">
+                              Sold Out
+                            </span>
+                          );
+                        }
+                        if (item.status && item.status !== "normal") {
+                          return (
+                            <span className={`absolute top-3 left-3 text-white text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-md shadow-sm z-10 ${
+                              item.status === "sale" 
+                                ? "bg-rose-600" 
+                                : item.status === "new" 
+                                ? "bg-[#C19A6B]" 
+                                : "bg-gray-800"
+                            }`}>
+                              {item.status}
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
 
                       {/* Mobile / Responsive Vertical Floating Circular Buttons with Hover Effect */}
-                      <div className="absolute bottom-3 right-3 flex flex-col gap-2 z-20 sm:hidden">
-                        <button
-                          type="button"
-                          onClick={(e) => handleAddToCart(e, item)}
-                          className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-md text-gray-900 flex items-center justify-center hover:bg-[#C19A6B] hover:text-white hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer"
-                          title="Add to Basket"
-                        >
-                          <AiOutlineShoppingCart className="text-base" />
-                        </button>
+                      {(() => {
+                        const isSoldOut = (Number(item.totalStock) || 0) === 0 || item.status === "sold";
+                        return (
+                          <div className="absolute bottom-3 right-3 flex flex-col gap-2 z-20 sm:hidden">
+                            <button
+                              type="button"
+                              disabled={isSoldOut}
+                              onClick={(e) => handleAddToCart(e, item)}
+                              className={`w-10 h-10 rounded-full shadow-md flex items-center justify-center transition-all duration-300 ${
+                                isSoldOut 
+                                  ? "bg-gray-200 text-gray-400 cursor-not-allowed opacity-70"
+                                  : "bg-white/90 backdrop-blur-md text-gray-900 hover:bg-[#C19A6B] hover:text-white hover:scale-110 active:scale-95 cursor-pointer"
+                              }`}
+                              title={isSoldOut ? "Sold Out" : "Add to Basket"}
+                            >
+                              <AiOutlineShoppingCart className="text-base" />
+                            </button>
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/virtual-room`, { state: { product: item } });
-                          }}
-                          className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-md text-gray-900 flex items-center justify-center hover:bg-[#C19A6B] hover:text-white hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer"
-                          title="Virtual Try-On"
-                        >
-                          <AiOutlineCamera className="text-base" />
-                        </button>
-                      </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/virtual-room`, { state: { product: item } });
+                              }}
+                              className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-md text-gray-900 flex items-center justify-center hover:bg-[#C19A6B] hover:text-white hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer"
+                              title="Virtual Try-On"
+                            >
+                              <AiOutlineCamera className="text-base" />
+                            </button>
+                          </div>
+                        );
+                      })()}
 
                       {/* Desktop Hover Action Bar */}
-                      <div
-                        className={`absolute bottom-0 left-0 right-0 hidden sm:grid grid-cols-2 gap-[1px] bg-gray-200 shadow-2xl transition-all duration-300 z-10 ${
-                          hoveredId === item._id ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          onClick={(e) => handleAddToCart(e, item)}
-                          className="bg-[#C19A6B] hover:bg-[#a8845a] py-3.5 px-2 text-[11px] font-bold uppercase tracking-wider text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <AiOutlineShoppingCart className="text-sm" />
-                          <span>Basket</span>
-                        </button>
+                      {(() => {
+                        const isSoldOut = (Number(item.totalStock) || 0) === 0 || item.status === "sold";
+                        return (
+                          <div
+                            className={`absolute bottom-0 left-0 right-0 hidden sm:grid grid-cols-2 gap-[1px] bg-gray-200 shadow-2xl transition-all duration-300 z-10 ${
+                              hoveredId === item._id ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
+                            }`}
+                          >
+                            <button
+                              type="button"
+                              disabled={isSoldOut}
+                              onClick={(e) => handleAddToCart(e, item)}
+                              className={`py-3.5 px-2 text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors ${
+                                isSoldOut
+                                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                  : "bg-[#C19A6B] hover:bg-[#a8845a] text-white cursor-pointer"
+                              }`}
+                            >
+                              <AiOutlineShoppingCart className="text-sm" />
+                              <span>{isSoldOut ? "Sold Out" : "Basket"}</span>
+                            </button>
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/virtual-room`, { state: { product: item } });
-                          }}
-                          className="bg-gray-900 hover:bg-[#C19A6B] py-3 px-2 text-[11px] font-bold uppercase tracking-wider text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <AiOutlineCamera className="text-sm text-[#C19A6B] group-hover:text-white" />
-                          <span>Try</span>
-                        </button>
-                      </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/virtual-room`, { state: { product: item } });
+                              }}
+                              className="bg-gray-900 hover:bg-[#C19A6B] py-3 px-2 text-[11px] font-bold uppercase tracking-wider text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <AiOutlineCamera className="text-sm text-[#C19A6B] group-hover:text-white" />
+                              <span>Try</span>
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <div className="pt-4 pb-1 flex flex-col flex-grow px-1">

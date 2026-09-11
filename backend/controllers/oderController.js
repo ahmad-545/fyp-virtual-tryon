@@ -1,4 +1,5 @@
 import Order from "../models/oderModel.js"; 
+import Product from "../models/Product.js";
 import nodemailer from "nodemailer";
 
 // ============================================
@@ -117,6 +118,54 @@ const sendAdminNotificationEmail = async (orderData) => {
 };
 
 // ============================================
+// HELPER: INVENTORY STOCK ADJUSTMENT
+// ============================================
+const adjustStockForOrderItems = async (items, action = "deduct") => {
+  try {
+    if (!items || !Array.isArray(items)) return;
+
+    for (const item of items) {
+      if (!item.productId) continue;
+
+      const product = await Product.findById(item.productId);
+      if (!product || !product.sizes) continue;
+
+      const targetSize = product.sizes.find(
+        (s) => s.size.toUpperCase() === (item.size || "").toUpperCase()
+      );
+
+      const qty = Number(item.quantity) || 1;
+
+      if (targetSize) {
+        if (action === "deduct") {
+          targetSize.stock = Math.max(0, (Number(targetSize.stock) || 0) - qty);
+        } else if (action === "restore") {
+          targetSize.stock = (Number(targetSize.stock) || 0) + qty;
+        }
+      }
+
+      // Recalculate totalStock
+      product.totalStock = product.sizes.reduce(
+        (sum, s) => sum + (Number(s.stock) || 0),
+        0
+      );
+
+      // Auto update product status
+      if (product.totalStock === 0) {
+        product.status = "sold";
+      } else if (product.totalStock > 0 && product.status === "sold") {
+        product.status = "normal";
+      }
+
+      await product.save();
+      console.log(`📦 Stock ${action}ed for Product: ${product.name}, Size: ${item.size}, Qty: ${qty}`);
+    }
+  } catch (err) {
+    console.error(`⚠️ Error adjusting inventory (${action}):`, err.message);
+  }
+};
+
+// ============================================
 // A. CREATE NEW ORDER (POST)
 // ============================================
 export const createOrder = async (req, res) => {
@@ -138,6 +187,11 @@ export const createOrder = async (req, res) => {
 
     const savedOrder = await newOrder.save();
     console.log("💾 Step 1: Document generated inside database collection.");
+
+    // Auto Deduct Product Stock from Inventory
+    adjustStockForOrderItems(items, "deduct").catch(err =>
+      console.error("Inventory deduction background warning:", err.message)
+    );
 
     // 1. Send Admin Email Notification
     sendAdminNotificationEmail(savedOrder);
@@ -182,14 +236,26 @@ export const updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { orderStatus } = req.body;
 
-    const updatedOrder = await Order.findByIdAndUpdate(
-      id, 
-      { orderStatus }, 
-      { new: true }
-    );
-
-    if (!updatedOrder) {
+    const existingOrder = await Order.findById(id);
+    if (!existingOrder) {
       return res.status(404).json({ success: false, message: "Order records match not found" });
+    }
+
+    const previousStatus = existingOrder.orderStatus;
+    existingOrder.orderStatus = orderStatus;
+    const updatedOrder = await existingOrder.save();
+
+    // If order was newly cancelled, restore stock to inventory
+    if (orderStatus === "Cancelled" && previousStatus !== "Cancelled") {
+      adjustStockForOrderItems(existingOrder.items, "restore").catch(err =>
+        console.error("Restock on cancellation warning:", err.message)
+      );
+    }
+    // If order was restored from Cancelled back to an active status, re-deduct stock
+    else if (previousStatus === "Cancelled" && orderStatus !== "Cancelled") {
+      adjustStockForOrderItems(existingOrder.items, "deduct").catch(err =>
+        console.error("Rededuct stock on uncancellation warning:", err.message)
+      );
     }
 
     return res.status(200).json({ 

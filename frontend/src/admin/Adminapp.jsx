@@ -8,7 +8,8 @@ import AddProduct from './pages/AddProduct.jsx';
 import ListProducts from './pages/ListProduct.jsx';
 import AdminOrders from './pages/AdminOrders.jsx';
 import AdminReviews from './pages/AdminReviews.jsx';
-
+import Inventory from './pages/Inventory.jsx';
+import AdminCustomers from './pages/AdminCustomers.jsx';
 
 const AdminApp = () => {
   const { adminData, loading } = useContext(AdminDataContext);
@@ -27,15 +28,17 @@ const AdminApp = () => {
             <Routes>
               {/* Dashboard ko default path par rakhein */}
               <Route path="/" element={<Dashboard />} />
+              
+              {/* Inventory Management Page */}
+              <Route path="/inventory" element={<Inventory />} />
+
               {/* Add Product Page */}
-                <Route path="/add-product" element={<AddProduct />} />
-                <Route path="/list-products" element={<ListProducts />} />
+              <Route path="/add-product" element={<AddProduct />} />
+              <Route path="/list-products" element={<ListProducts />} />
                 
               <Route path="/orders" element={<AdminOrders />} />
+              <Route path="/customers" element={<AdminCustomers />} />
               <Route path="/reviews" element={<AdminReviews />} />
-
-
-             
 
               {/* Agar koi wrong URL type kare, Dashboard par redirect karein */}
               <Route path="*" element={<Navigate to="/" replace />} />
