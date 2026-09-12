@@ -11,6 +11,7 @@ import productRoutes from "./routes/productRoutes.js";
 import orderRoutes from "./routes/oderRoutes.js";
 import subscriberRouter from "./routes/subscriberRoutes.js";
 import chatRouter from "./routes/chatRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
 
 dotenv.config();
 
@@ -71,6 +72,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/subscriber", subscriberRouter);
 app.use("/api/subscribers", subscriberRouter);
 app.use("/api", chatRouter);
+app.use("/api/reviews", reviewRoutes);
 
 // Test Route
 app.get("/", (req, res) => {
