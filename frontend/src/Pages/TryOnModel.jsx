@@ -119,13 +119,13 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
     }
   }, [searchQuery, allProducts]);
 
+  const [statusMessage, setStatusMessage] = useState("");
+
   useEffect(() => {
     if (routeProduct) setActiveProduct(routeProduct);
   }, [routeProduct]);
 
   if (isOpen === false) return null;
-
-  const [statusMessage, setStatusMessage] = useState("");
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -136,73 +136,56 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
     }
   };
 
-  // ⚡ TRY-ON ENGINE
+  // ⚡ PIPELINE B: USER TRY-ON SUBMISSION
   const handleTryOnSubmit = async () => {
     if (!selectedFile) return alert('Please upload a portrait photo first.');
     if (!activeProduct) return alert('Please select an apparel item first.');
 
     setLoading(true);
     setAiResult(null);
+    setStatusMessage("Uploading portrait & preparing garment...");
 
     try {
-      const uploadData = new FormData();
-      uploadData.append('file', selectedFile);
-      uploadData.append('upload_preset', 'your_cloudinary_preset_name');
+      const formData = new FormData();
+      formData.append('photo', selectedFile);
+      if (activeProduct._id) {
+        formData.append('productId', activeProduct._id);
+      }
+      const clothUrl =
+        activeProduct.cleanGarmentUrl ||
+        activeProduct.images?.[0]?.url ||
+        activeProduct.images?.[0] ||
+        '';
+      if (clothUrl) {
+        formData.append('clothImageUrl', clothUrl);
+      }
+      formData.append('userId', 'guest_user');
 
-      const cloudinaryRes = await fetch(
-        'https://api.cloudinary.com/v1_1/your_cloud_name/image/upload',
-        { method: 'POST', body: uploadData }
-      );
-      const uploadedImage = await cloudinaryRes.json();
-      const userCloudinaryUrl = uploadedImage.secure_url;
-
-      if (!userCloudinaryUrl) throw new Error('Cloudinary upload failed.');
-
-      const targetClothUrl =
-        activeProduct.images?.[0]?.url || activeProduct.images?.[0] || '';
+      setStatusMessage("AI Server synthesizing virtual try-on...");
 
       const response = await axios.post(
         'http://localhost:8000/api/ai/process-tryon',
-        { personImageUrl: userCloudinaryUrl, clothImageUrl: targetClothUrl }
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
       );
 
-      if (response.data.success) {
+      if (response.data?.success) {
         setStatusMessage("Try-On complete!");
-        setAiResult({ renderOutput2D: response.data.result_url || response.data.tryOnImage });
+        const outputUrl = response.data.result_url || response.data.tryOnImage;
+        setAiResult({ renderOutput2D: outputUrl });
       } else {
-        alert(response.data.message || 'AI execution error.');
+        alert(response.data?.message || 'AI execution error.');
       }
     } catch (error) {
       console.error('Try-On pipeline error:', error);
-      alert('AI Pipeline error or image upload timeout.');
+      alert(error.response?.data?.message || 'AI Pipeline error or connection timeout.');
     } finally {
       setLoading(false);
       setStatusMessage("");
-    }
-  };
-
-  // ── REVIEW SUBMIT ─────────────────────────
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-    if (reviewData.rating === 0) return alert('Please select a star rating.');
-    if (!reviewData.name.trim()) return alert('Please enter your name.');
-    if (!reviewData.comment.trim()) return alert('Please write about your experience.');
-
-    setReviewLoading(true);
-    try {
-      await axios.post('http://localhost:8000/api/reviews', {
-        name: reviewData.name.trim(),
-        role: reviewData.role.trim() || 'Virtual Try-On User',
-        rating: reviewData.rating,
-        comment: reviewData.comment.trim(),
-        productName: activeProduct?.name || '',
-      });
-      setReviewSubmitted(true);
-    } catch (error) {
-      console.error('Review submit error:', error);
-      alert('Failed to submit review. Please try again.');
-    } finally {
-      setReviewLoading(false);
     }
   };
 
@@ -396,7 +379,19 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
             )}
 
             <div className="flex-1 w-full border border-neutral-800 bg-neutral-950 rounded-xl p-2 flex flex-col items-center justify-center min-h-[260px] relative overflow-hidden shadow-inner">
-              {aiResult ? (
+              {loading ? (
+                <div className="text-center p-6 space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-[#C19A6B]/30 flex items-center justify-center mx-auto text-[#C19A6B]">
+                    <Loader2 size={24} className="animate-spin" />
+                  </div>
+                  <p className="text-xs font-mono text-[#C19A6B] tracking-wide font-semibold">
+                    {statusMessage || "AI Processing..."}
+                  </p>
+                  <p className="text-[11px] text-neutral-500 max-w-[220px] mx-auto leading-relaxed">
+                    Executing neural segmentation and fitting pipeline...
+                  </p>
+                </div>
+              ) : aiResult ? (
                 <div className="w-full h-full rounded-lg overflow-hidden flex items-center justify-center">
                   <img
                     src={aiResult.renderOutput2D}

@@ -447,6 +447,32 @@ export const updateProduct = async (req, res) => {
         isVirtualTryOnEnabled === true;
     }
 
+    // ==========================
+    // Pipeline A: Re-run SAM if images changed or not yet segmented
+    // ==========================
+    const hasNewImages = Boolean(req.files && (req.files.image1 || req.files.image2 || req.files.image3));
+    if (product.isVirtualTryOnEnabled && (hasNewImages || !product.cleanGarmentUrl) && product.images?.length > 0) {
+      try {
+        const aiServerUrl = process.env.AI_SERVER_URL || "http://127.0.0.1:8001";
+        console.log(`🤖 Triggering Pipeline A on update for SKU: ${product.sku}...`);
+        const aiRes = await axios.post(`${aiServerUrl}/process-garment`, {
+          product_id: product.sku || product._id.toString(),
+          raw_image_url: product.images[0].url,
+        });
+
+        if (aiRes.data && aiRes.data.clean_garment_url) {
+          product.cleanGarmentUrl = aiRes.data.clean_garment_url;
+          product.isProcessedByAI = true;
+          console.log("✅ Pipeline A update success! Clean garment URL cached:", product.cleanGarmentUrl);
+        }
+      } catch (aiErr) {
+        console.error("⚠️ Pipeline A update warning:", aiErr.message);
+        if (!product.cleanGarmentUrl) {
+          product.cleanGarmentUrl = product.images[0].url;
+        }
+      }
+    }
+
     await product.save();
 
     // 🔌 Real-time: Notify all clients about updated product

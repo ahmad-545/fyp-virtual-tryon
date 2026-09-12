@@ -198,6 +198,15 @@ function Navbar() {
               SALES
             </Link>
 
+            {/* TRACK ORDER */}
+            <Link
+              to="/track-order"
+              className="relative group transition duration-300 hover:text-[#C19A6B]"
+            >
+              TRACK ORDER
+              <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-[#C19A6B] transition-all duration-300 group-hover:w-full"></span>
+            </Link>
+
             {/* TRY ON CLOTH */}
             <Link
               to="/virtual-room"
@@ -371,6 +380,11 @@ function Navbar() {
               {/* ⚡ MOBILE BUTTON: TRY ON CLOTH */}
               <Link to="/virtual-room" onClick={() => setIsOpen(false)} className="font-bold text-[#C19A6B]">
                 Try On Cloth
+              </Link>
+
+              {/* ⚡ MOBILE BUTTON: TRACK ORDER */}
+              <Link to="/track-order" onClick={() => setIsOpen(false)} className="font-semibold text-neutral-800 hover:text-[#C19A6B]">
+                Track Order
               </Link>
 
               {/* MEN */}

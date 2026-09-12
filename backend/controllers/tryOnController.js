@@ -13,7 +13,7 @@ export const executeTryOn = async (req, res) => {
     console.log("REQ BODY =>", req.body);
     console.log("REQ FILE =>", req.file ? req.file.originalname : "No file buffer");
 
-    const { productId, userId = "guest_user", personImageUrl, clothImageUrl } = req.body;
+    const { productId, userId = "guest_user", personImageUrl, clothImageUrl } = req.body || {};
 
     if (!productId && !clothImageUrl) {
       return res.status(400).json({

@@ -1,6 +1,7 @@
 import Order from "../models/oderModel.js"; 
 import Product from "../models/Product.js";
 import nodemailer from "nodemailer";
+import mongoose from "mongoose";
 
 // ============================================
 // 1. CUSTOMER EMAIL DISPATCH ENGINE
@@ -265,5 +266,119 @@ export const updateOrderStatus = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ============================================
+// D. TRACK ORDER (GET)
+// ============================================
+export const trackOrder = async (req, res) => {
+  try {
+    const rawQuery =
+      req.params.id ||
+      req.query.query ||
+      req.query.orderId ||
+      req.query.email ||
+      req.query.phone;
+
+    if (!rawQuery || !String(rawQuery).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter your Order ID, registered Email, or Phone number.",
+      });
+    }
+
+    const cleanQuery = String(rawQuery).trim();
+    let order = null;
+    let ordersList = [];
+
+    // 1. Direct MongoDB ObjectId match (24 hex characters)
+    if (mongoose.Types.ObjectId.isValid(cleanQuery) && cleanQuery.length === 24) {
+      order = await Order.findById(cleanQuery);
+      if (order) ordersList = [order];
+    }
+
+    // 2. Short Order ID search (e.g., last 6 or 8 characters like #AFF7E9C5)
+    if (!order && cleanQuery.length >= 4 && cleanQuery.length <= 24) {
+      const sanitized = cleanQuery.replace(/^#/, "");
+      const allOrders = await Order.find({}).sort({ createdAt: -1 }).limit(200);
+      const matched = allOrders.filter((o) =>
+        o._id.toString().toUpperCase().endsWith(sanitized.toUpperCase())
+      );
+      if (matched.length > 0) {
+        order = matched[0];
+        ordersList = matched;
+      }
+    }
+
+    // 3. Email match (case-insensitive)
+    if (!order && cleanQuery.includes("@")) {
+      ordersList = await Order.find({
+        "customerInfo.email": { $regex: new RegExp(`^${cleanQuery}$`, "i") },
+      }).sort({ createdAt: -1 });
+
+      if (ordersList.length > 0) {
+        order = ordersList[0];
+      }
+    }
+
+    // 4. Phone number match
+    if (!order) {
+      const phoneDigits = cleanQuery.replace(/\D/g, "");
+      if (phoneDigits.length >= 7) {
+        ordersList = await Order.find({
+          "customerInfo.phone": { $regex: new RegExp(phoneDigits, "i") },
+        }).sort({ createdAt: -1 });
+
+        if (ordersList.length > 0) {
+          order = ordersList[0];
+        }
+      }
+    }
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "No order found matching your tracking search. Please verify your details.",
+      });
+    }
+
+    // Calculate dynamic milestone tracking stages
+    const createdAt = new Date(order.createdAt);
+    const orderStatus = order.orderStatus || "Processing";
+
+    // Estimated delivery: 3 to 5 business days
+    const estimatedDeliveryMin = new Date(createdAt);
+    estimatedDeliveryMin.setDate(estimatedDeliveryMin.getDate() + 3);
+    const estimatedDeliveryMax = new Date(createdAt);
+    estimatedDeliveryMax.setDate(estimatedDeliveryMax.getDate() + 5);
+
+    const trackingDetails = {
+      courier: "Leopards Courier / TCS Express",
+      trackingNumber: `TRK-${order._id.toString().slice(-8).toUpperCase()}`,
+      estimatedDelivery: `${estimatedDeliveryMin.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${estimatedDeliveryMax.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
+      currentStep:
+        orderStatus === "Delivered"
+          ? 4
+          : orderStatus === "Shipped"
+          ? 3
+          : orderStatus === "Processing"
+          ? 2
+          : 1,
+      isCancelled: orderStatus === "Cancelled",
+    };
+
+    return res.status(200).json({
+      success: true,
+      order,
+      orders: ordersList,
+      trackingDetails,
+    });
+  } catch (error) {
+    console.error("TRACK ORDER ERROR =>", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to track order.",
+    });
   }
 };

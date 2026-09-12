@@ -25,6 +25,7 @@ import FAQs from './Pages/FAQs.jsx';
 import Careers from './Pages/Careers.jsx';
 import Returnexchange from './Pages/Returnexchange.jsx';
 import Contact from './Pages/Contact.jsx';
+import TrackOrder from './Pages/TrackOrder.jsx';
 
 function App() {
   return (
@@ -57,6 +58,8 @@ function App() {
                     <Route path="/careers" element={<Careers />} />
                     <Route path="/returnexchange" element={<Returnexchange />} />
                     <Route path="/contact" element={<Contact />} />
+                    <Route path="/track-order" element={<TrackOrder />} />
+                    <Route path="/trackorder" element={<TrackOrder />} />
                     <Route path="/virtual-room" element={<TryOnModel isOpen={true} onClose={() => window.history.back()} />} />
                   </Routes>
                 </main>

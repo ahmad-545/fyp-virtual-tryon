@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, Link } from "react-router-dom";
-import { CheckCircle, MapPin, CreditCard, ShoppingBag, ArrowRight, ShieldAlert, PackageCheck } from "lucide-react";
+import { CheckCircle, MapPin, CreditCard, ShoppingBag, ArrowRight, ShieldAlert, PackageCheck, Truck } from "lucide-react";
 
 function OrderConfirmation() {
   const location = useLocation();
@@ -38,10 +38,19 @@ function OrderConfirmation() {
             Your tracking lifecycle sequence has been activated. A stylized invoice receipt dashboard has been compiled for your records.
           </p>
           
-          {/* MASTER DATABASE TRANSACTION TRACK ID */}
-          <div className="inline-flex items-center gap-2 bg-black text-white text-xs font-mono font-bold px-5 py-2.5 rounded-xl shadow-lg tracking-wider mt-3">
-            <PackageCheck size={16} className="text-[#C19A6B]" />
-            REFERENCE MASTER ID: #{orderData._id.toString().slice(-8).toUpperCase()}
+          {/* MASTER DATABASE TRANSACTION TRACK ID + TRACK ACTION */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
+            <div className="inline-flex items-center gap-2 bg-black text-white text-xs font-mono font-bold px-5 py-2.5 rounded-xl shadow-lg tracking-wider">
+              <PackageCheck size={16} className="text-[#C19A6B]" />
+              REFERENCE MASTER ID: #{orderData._id.toString().slice(-8).toUpperCase()}
+            </div>
+            <Link
+              to={`/track-order?id=${orderData._id}`}
+              className="inline-flex items-center gap-2 bg-[#C19A6B] hover:bg-[#b0895b] text-black text-xs font-mono font-bold px-5 py-2.5 rounded-xl shadow-md tracking-wider transition cursor-pointer"
+            >
+              <Truck size={15} />
+              TRACK THIS ORDER
+            </Link>
           </div>
         </div>
 
@@ -148,11 +157,17 @@ function OrderConfirmation() {
           </div>
         </div>
 
-        {/* BOTTOM BACK TO SHOP REDIRECT CATALYST CTA */}
-        <div className="text-center mt-12">
+        {/* BOTTOM BACK TO SHOP & TRACK ORDER CTAS */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12">
+          <Link 
+            to={`/track-order?id=${orderData._id}`}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#C19A6B] text-black px-8 py-4 rounded-xl text-xs font-bold tracking-[2px] uppercase shadow-lg hover:bg-[#b0895b] transition duration-300 cursor-pointer"
+          >
+            <Truck size={15} /> Track Your Order Now
+          </Link>
           <Link 
             to="/" 
-            className="inline-flex items-center gap-2 bg-black text-white px-8 py-4 rounded-xl text-xs font-bold tracking-[2px] uppercase shadow-lg hover:bg-[#C19A6B] transition duration-300 cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-black text-white px-8 py-4 rounded-xl text-xs font-bold tracking-[2px] uppercase shadow-lg hover:bg-neutral-800 transition duration-300 cursor-pointer"
           >
             Continue Shopping <ArrowRight size={14} />
           </Link>
