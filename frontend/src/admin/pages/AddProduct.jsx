@@ -110,7 +110,10 @@ export default function AddProduct() {
 
       const data = await res.json();
       if (data.success) {
-        alert("Product Added Successfully!");
+        const aiMsg = data.product?.cleanGarmentUrl
+          ? "\n✨ AI Garment Segmentation completed & cached in MongoDB (Pipeline A)!"
+          : "";
+        alert("Product Added Successfully!" + aiMsg);
         setProduct({
           name: "",
           sku: "",

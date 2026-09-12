@@ -83,56 +83,53 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
 
   if (isOpen === false) return null;
 
+  const [statusMessage, setStatusMessage] = useState("");
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setSelectedFile(file);
       setImagePreview(URL.createObjectURL(file));
+      setAiResult(null);
     }
   };
 
-  // ⚡ DYNAMIC TRY-ON ENGINE
+  // ⚡ DYNAMIC TRY-ON ENGINE (PIPELINE B)
   const handleTryOnSubmit = async () => {
     if (!selectedFile) return alert("Please upload or capture a profile photo first.");
     if (!activeProduct) return alert("Please select a target apparel item first.");
 
     setLoading(true);
-    setAiResult(null); 
+    setAiResult(null);
+    setStatusMessage("Uploading photo to backend...");
 
     try {
-      const uploadData = new FormData();
-      uploadData.append("file", selectedFile);
-      uploadData.append("upload_preset", "your_cloudinary_preset_name"); 
+      const formData = new FormData();
+      formData.append("photo", selectedFile);
+      formData.append("productId", activeProduct._id);
+      formData.append("userId", "guest_user");
 
-      const cloudinaryRes = await fetch("https://api.cloudinary.com/v1_1/your_cloud_name/image/upload", { 
-        method: "POST",
-        body: uploadData,
-      });
-      
-      const uploadedImage = await cloudinaryRes.json();
-      const userCloudinaryUrl = uploadedImage.secure_url;
+      setStatusMessage("Running AI Pipeline: SCHP + DensePose + IDM-VTON...");
 
-      if (!userCloudinaryUrl) {
-        throw new Error("Cloudinary profile upload failed.");
-      }
-
-      const targetClothUrl = activeProduct.images?.[0]?.url || activeProduct.images?.[0] || "";
-
-      const response = await axios.post("http://localhost:8000/api/ai/process-tryon", {
-        personImageUrl: userCloudinaryUrl,
-        clothImageUrl: targetClothUrl
+      const response = await axios.post("http://localhost:8000/api/try-on", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       if (response.data.success) {
-        setAiResult({ renderOutput2D: response.data.tryOnImage });
+        setStatusMessage("Try-On complete!");
+        setAiResult({ renderOutput2D: response.data.result_url || response.data.tryOnImage });
       } else {
         alert(response.data.message || "AI execution pipeline error.");
       }
     } catch (error) {
       console.error("Express router pipeline failure:", error);
-      alert("AI Pipeline Connection Refused or Image upload timeout.");
+      const msg = error.response?.data?.message || "AI Pipeline Connection Refused or Image upload timeout.";
+      alert(msg);
     } finally {
       setLoading(false);
+      setStatusMessage("");
     }
   };
 
@@ -273,8 +270,16 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
 
             <div className="flex-1 w-full border border-neutral-800 bg-neutral-950 rounded-xl p-2 flex flex-col items-center justify-center min-h-[260px] relative overflow-hidden shadow-inner">
               {aiResult ? (
-                <div className="w-full h-full rounded-lg overflow-hidden flex items-center justify-center">
+                <div className="w-full h-full rounded-lg overflow-hidden flex flex-col items-center justify-center relative group">
                   <img src={aiResult.renderOutput2D} alt="Virtual Try-On Result" className="w-full h-full object-cover rounded-lg" />
+                  <a 
+                    href={aiResult.renderOutput2D} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="absolute bottom-3 right-3 bg-black/80 hover:bg-black text-[#C19A6B] border border-[#C19A6B]/50 px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase tracking-wider backdrop-blur-md transition shadow-md"
+                  >
+                    Open Full Size
+                  </a>
                 </div>
               ) : (
                 <div className="text-center p-6 space-y-3">
@@ -301,7 +306,7 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
             {loading ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                <span>AI Rendering...</span>
+                <span className="text-[10px]">{statusMessage || "AI Rendering..."}</span>
               </>
             ) : (
               <>
