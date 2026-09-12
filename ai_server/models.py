@@ -12,7 +12,7 @@ class ProcessGarmentResponse(BaseModel):
     message: str
 
 class TryOnRequest(BaseModel):
-    user_id: str
+    user_id: Optional[str] = "guest_user"
     product_id: str
     user_photo_url: HttpUrl
     clean_garment_url: HttpUrl

@@ -149,6 +149,17 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    cleanGarmentUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    isProcessedByAI: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
