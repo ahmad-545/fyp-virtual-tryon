@@ -10,9 +10,15 @@ import {
   addReview,
   deleteReview,
   toggleReviewStatus,
+  processProductGarment,
 } from "../controllers/productController.js";
 
 const productRoutes = express.Router();
+
+// ============================================
+// PROCESS GARMENT (PIPELINE A)
+// ============================================
+productRoutes.post("/:id/process-garment", processProductGarment);
 
 // ============================================
 // ADD PRODUCT

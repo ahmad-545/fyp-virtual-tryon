@@ -1,3 +1,4 @@
+import axios from "axios";
 import Product from "../models/Product.js";
 import uploadoncloudinary, {
   deleteFromCloudinary,
@@ -122,6 +123,36 @@ export const addProduct = async (req, res) => {
     );
 
     // ==========================
+    // Pipeline A: SAM Segmentation
+    // ==========================
+    const virtualTryOnBool =
+      isVirtualTryOnEnabled === "true" || isVirtualTryOnEnabled === true;
+
+    let cleanGarmentUrl = "";
+    let isProcessedByAI = false;
+
+    if (virtualTryOnBool && images.length > 0) {
+      try {
+        const aiServerUrl = process.env.AI_SERVER_URL || "http://127.0.0.1:8001";
+        console.log(`🤖 Triggering Pipeline A: Calling FastAPI ${aiServerUrl}/process-garment for SKU: ${sku}...`);
+
+        const aiRes = await axios.post(`${aiServerUrl}/process-garment`, {
+          product_id: sku,
+          raw_image_url: images[0].url,
+        });
+
+        if (aiRes.data && aiRes.data.clean_garment_url) {
+          cleanGarmentUrl = aiRes.data.clean_garment_url;
+          isProcessedByAI = true;
+          console.log("✅ Pipeline A Success! Clean Garment URL cached:", cleanGarmentUrl);
+        }
+      } catch (aiErr) {
+        console.error("⚠️ Pipeline A Warning: AI Server segmentation call failed:", aiErr.message);
+        cleanGarmentUrl = images[0].url;
+      }
+    }
+
+    // ==========================
     // Create Product
     // ==========================
 
@@ -147,9 +178,9 @@ export const addProduct = async (req, res) => {
 
       totalStock,
 
-      isVirtualTryOnEnabled:
-        isVirtualTryOnEnabled === "true" ||
-        isVirtualTryOnEnabled === true,
+      isVirtualTryOnEnabled: virtualTryOnBool,
+      cleanGarmentUrl,
+      isProcessedByAI,
     });
 
     return res.status(201).json({
@@ -587,6 +618,60 @@ export const toggleReviewStatus = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+// ============================================
+// I. PROCESS GARMENT SEGMENTATION (PIPELINE A RE-RUN)
+// ============================================
+
+export const processProductGarment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found." });
+    }
+
+    if (!product.images || product.images.length === 0) {
+      return res.status(400).json({ success: false, message: "Product has no images to segment." });
+    }
+
+    const rawImageUrl = product.images[0].url;
+    const aiServerUrl = process.env.AI_SERVER_URL || "http://127.0.0.1:8001";
+
+    console.log(`🤖 Calling FastAPI ${aiServerUrl}/process-garment for product ${product.sku}...`);
+
+    const aiRes = await axios.post(`${aiServerUrl}/process-garment`, {
+      product_id: product.sku || product._id.toString(),
+      raw_image_url: rawImageUrl,
+    });
+
+    if (aiRes.data && aiRes.data.clean_garment_url) {
+      product.cleanGarmentUrl = aiRes.data.clean_garment_url;
+      product.isProcessedByAI = true;
+      product.isVirtualTryOnEnabled = true;
+      await product.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Garment successfully segmented and cached (Pipeline A).",
+        cleanGarmentUrl: product.cleanGarmentUrl,
+        product,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "AI server did not return a clean garment URL.",
+    });
+  } catch (error) {
+    console.error("PROCESS PRODUCT GARMENT ERROR =>", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Garment processing failed.",
     });
   }
 };
