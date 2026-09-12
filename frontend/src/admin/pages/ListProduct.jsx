@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Search, Trash2, Edit, Package, AlertCircle, Filter, X, Plus, ImagePlus, Loader2, Star, TrendingUp, Boxes } from "lucide-react";
+import socket from "../../utils/socket.js";
 
 export default function ListProduct() {
   const [products, setProducts] = useState([]);
@@ -70,6 +71,42 @@ export default function ListProduct() {
     }, 300);
     return () => clearTimeout(delayDebounce);
   }, [search, category]);
+
+  // ============================================
+  // REAL-TIME SOCKET.IO LISTENERS
+  // ============================================
+  useEffect(() => {
+    // Naya product add ho toh list mein upar add kar do
+    const onProductAdded = ({ product }) => {
+      setProducts((prev) => {
+        // Duplicate check
+        if (prev.find((p) => p._id === product._id)) return prev;
+        return [product, ...prev];
+      });
+    };
+
+    // Product update ho toh existing item replace kar do
+    const onProductUpdated = ({ product }) => {
+      setProducts((prev) =>
+        prev.map((p) => (p._id === product._id ? product : p))
+      );
+    };
+
+    // Product delete ho toh list se nikal do
+    const onProductDeleted = ({ productId }) => {
+      setProducts((prev) => prev.filter((p) => p._id !== productId.toString()));
+    };
+
+    socket.on("product:added", onProductAdded);
+    socket.on("product:updated", onProductUpdated);
+    socket.on("product:deleted", onProductDeleted);
+
+    return () => {
+      socket.off("product:added", onProductAdded);
+      socket.off("product:updated", onProductUpdated);
+      socket.off("product:deleted", onProductDeleted);
+    };
+  }, []);
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;

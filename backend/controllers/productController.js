@@ -2,6 +2,7 @@ import Product from "../models/Product.js";
 import uploadoncloudinary, {
   deleteFromCloudinary,
 } from "../config/cloudinary.js";
+import { io } from "../index.js";
 
 // ============================================
 // A. ADD NEW PRODUCT (POST)
@@ -151,6 +152,9 @@ export const addProduct = async (req, res) => {
         isVirtualTryOnEnabled === "true" ||
         isVirtualTryOnEnabled === true,
     });
+
+    // 🔌 Real-time: Notify all clients about new product
+    io.emit("product:added", { product });
 
     return res.status(201).json({
       success: true,
@@ -414,6 +418,9 @@ export const updateProduct = async (req, res) => {
 
     await product.save();
 
+    // 🔌 Real-time: Notify all clients about updated product
+    io.emit("product:updated", { product });
+
     return res.status(200).json({
       success: true,
       message: "Product updated successfully.",
@@ -447,7 +454,11 @@ export const removeProduct = async (req, res) => {
       });
     }
 
+    const deletedId = product._id;
     await product.deleteOne();
+
+    // 🔌 Real-time: Notify all clients about deleted product
+    io.emit("product:deleted", { productId: deletedId });
 
     return res.status(200).json({
       success: true,
@@ -636,6 +647,9 @@ export const updateProductInventory = async (req, res) => {
     }
 
     await product.save();
+
+    // 🔌 Real-time: Notify all clients about inventory update
+    io.emit("product:updated", { product });
 
     return res.status(200).json({
       success: true,

@@ -16,7 +16,10 @@ import VirtualTryOnPromo from "./VirtualTryOnPromo";
 import Trending from "./Trending";
 import Timer from "./Timer";
 import Feature from "./Feature";
-import Footer from "../components/Footer";
+import WhyTrylo from "./WhyTrylo";
+import Testimonials from "./Testimonials";
+import Newsletter from "./Newsletter";
+import TrustBadges from "./TrustBadges";
 import home1 from "../assets/Videos/home 1.mp4";
 import home2 from "../assets/Videos/home 2.mp4";
 import home3 from "../assets/Videos/home 3.mp4";
@@ -129,6 +132,10 @@ function Home() {
       <Trending />
       <Timer />
       <Feature />
+      <WhyTrylo />
+      <Testimonials />
+      <Newsletter />
+      <TrustBadges />
     </>
   );
 }

@@ -7,10 +7,11 @@ import {
   AiOutlineCamera,
   AiFillStar,
 } from "react-icons/ai";
-import { Sparkles } from "lucide-react"; 
+import { Sparkles, ZoomIn } from "lucide-react"; 
 import { useDispatch } from "react-redux";
 import { addToCart, openCart } from "../redux/cartSlice.js"; 
 import TryOnModal from "./TryOnModel.jsx"; 
+import socket from "../utils/socket.js";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -30,6 +31,26 @@ export default function ProductDetail() {
   // Reviews State
   const [reviews, setReviews] = useState([]);
   const [newReview, setNewReview] = useState({ name: "", rating: 5, comment: "" });
+
+  // Zoom State
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+
+  const handleMouseMove = (e) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((e.clientX - left) / width) * 100));
+    const y = Math.max(0, Math.min(100, ((e.clientY - top) / height) * 100));
+    setZoomPos({ x, y });
+  };
+
+  const handleTouchMove = (e) => {
+    if (!e.touches || e.touches.length === 0) return;
+    const touch = e.touches[0];
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((touch.clientX - left) / width) * 100));
+    const y = Math.max(0, Math.min(100, ((touch.clientY - top) / height) * 100));
+    setZoomPos({ x, y });
+  };
 
   // ============================================
   // FETCH PRODUCT DETAILS
@@ -73,6 +94,44 @@ export default function ProductDetail() {
     fetchProduct();
     window.scrollTo(0, 0);
   }, [id]);
+
+  // ============================================
+  // REAL-TIME SOCKET.IO LISTENERS
+  // ============================================
+  useEffect(() => {
+    // Sirf current product ka update sunna hai
+    const onProductUpdated = ({ product: updatedProduct }) => {
+      if (!updatedProduct) return;
+      // id ya slug se match karo
+      const currentProductId = product?._id?.toString();
+      if (
+        updatedProduct._id?.toString() === currentProductId ||
+        updatedProduct.slug === id
+      ) {
+        setProduct(updatedProduct);
+        // Pehli image update karo
+        const firstImg = updatedProduct.images?.[0]?.url || updatedProduct.images?.[0] || "";
+        setMainImage(firstImg);
+        // Reviews bhi update karo
+        if (updatedProduct.reviews) setReviews(updatedProduct.reviews);
+      }
+    };
+
+    // Agar current product delete ho jaye toh shop page par bhejo
+    const onProductDeleted = ({ productId }) => {
+      if (product?._id?.toString() === productId?.toString()) {
+        navigate("/shop");
+      }
+    };
+
+    socket.on("product:updated", onProductUpdated);
+    socket.on("product:deleted", onProductDeleted);
+
+    return () => {
+      socket.off("product:updated", onProductUpdated);
+      socket.off("product:deleted", onProductDeleted);
+    };
+  }, [id, product?._id, navigate]);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -197,14 +256,58 @@ export default function ProductDetail() {
             })}
           </div>
 
-          {/* Main Display Image */}
-          <div className="flex-1 bg-gray-100 rounded-2xl overflow-hidden w-full aspect-[3/4] lg:aspect-[4/5] shadow-sm relative group">
-            <img src={mainImage || product.images?.[0]?.url || product.images?.[0]} alt={product.name} className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105" />
-            
+          {/* Main Display Image with Interactive Cursor & Touch Zoom */}
+          <div
+            onMouseEnter={() => setIsZoomed(true)}
+            onMouseLeave={() => setIsZoomed(false)}
+            onMouseMove={handleMouseMove}
+            onTouchStart={(e) => {
+              setIsZoomed(true);
+              handleTouchMove(e);
+            }}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={() => setIsZoomed(false)}
+            onClick={(e) => {
+              handleMouseMove(e);
+              setIsZoomed((prev) => !prev);
+            }}
+            className="flex-1 bg-gray-100 rounded-2xl overflow-hidden w-full aspect-[3/4] lg:aspect-[4/5] shadow-sm relative group cursor-crosshair select-none touch-none"
+          >
+            <img
+              src={mainImage || product.images?.[0]?.url || product.images?.[0]}
+              alt={product.name}
+              style={{
+                transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                transform: isZoomed ? "scale(2.5)" : "scale(1)",
+                transition: isZoomed
+                  ? "transform 0.08s ease-out"
+                  : "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+              }}
+              className="w-full h-full object-cover object-center pointer-events-none will-change-transform"
+            />
+
+            {/* Floating Zoom Indicator Pill */}
+            <div
+              className={`absolute bottom-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-black/65 backdrop-blur-md text-white text-[11px] font-medium rounded-full pointer-events-none transition-all duration-300 border border-white/15 ${
+                isZoomed
+                  ? "opacity-0 translate-y-2"
+                  : "opacity-85 group-hover:opacity-100 translate-y-0"
+              }`}
+            >
+              <ZoomIn size={13} className="text-[#C19A6B]" />
+              <span>Hover or touch to zoom</span>
+            </div>
+
             {product.status && product.status !== "normal" && (
-              <span className={`absolute top-4 left-4 text-white text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-md shadow-sm z-10 ${
-                product.status === "sale" ? "bg-rose-600" : product.status === "new" ? "bg-[#C19A6B]" : "bg-gray-800"
-              }`}>
+              <span
+                className={`absolute top-4 left-4 text-white text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-md shadow-sm z-10 pointer-events-none ${
+                  product.status === "sale"
+                    ? "bg-rose-600"
+                    : product.status === "new"
+                    ? "bg-[#C19A6B]"
+                    : "bg-gray-800"
+                }`}
+              >
                 {product.status}
               </span>
             )}

@@ -19,6 +19,7 @@ import {
   ArrowUpDown,
   TrendingDown
 } from "lucide-react";
+import socket from "../../utils/socket.js";
 
 export default function Inventory() {
   const [products, setProducts] = useState([]);
@@ -100,6 +101,70 @@ export default function Inventory() {
 
   useEffect(() => {
     fetchInventoryData();
+  }, []);
+
+  // ============================================
+  // REAL-TIME SOCKET.IO LISTENERS
+  // ============================================
+  useEffect(() => {
+    // Helper to recalculate summary from updated product list
+    const recalcSummary = (updatedProducts) => {
+      let units = 0, value = 0, outCount = 0, lowCount = 0;
+      updatedProducts.forEach((p) => {
+        const st = Number(p.totalStock) || 0;
+        const pr = Number(p.price) || 0;
+        units += st;
+        value += st * pr;
+        if (st === 0) outCount++;
+        else if (st <= 5) lowCount++;
+      });
+      setSummary({
+        totalProducts: updatedProducts.length,
+        totalStockUnits: units,
+        totalInventoryValue: value,
+        outOfStockCount: outCount,
+        lowStockCount: lowCount,
+        healthyStockCount: updatedProducts.length - outCount - lowCount,
+      });
+    };
+
+    // Naya product add ho
+    const onProductAdded = ({ product }) => {
+      setProducts((prev) => {
+        if (prev.find((p) => p._id === product._id)) return prev;
+        const updated = [product, ...prev];
+        recalcSummary(updated);
+        return updated;
+      });
+    };
+
+    // Product update ya inventory change ho
+    const onProductUpdated = ({ product }) => {
+      setProducts((prev) => {
+        const updated = prev.map((p) => (p._id === product._id ? product : p));
+        recalcSummary(updated);
+        return updated;
+      });
+    };
+
+    // Product delete ho
+    const onProductDeleted = ({ productId }) => {
+      setProducts((prev) => {
+        const updated = prev.filter((p) => p._id !== productId.toString());
+        recalcSummary(updated);
+        return updated;
+      });
+    };
+
+    socket.on("product:added", onProductAdded);
+    socket.on("product:updated", onProductUpdated);
+    socket.on("product:deleted", onProductDeleted);
+
+    return () => {
+      socket.off("product:added", onProductAdded);
+      socket.off("product:updated", onProductUpdated);
+      socket.off("product:deleted", onProductDeleted);
+    };
   }, []);
 
   // Filtered Products Logic

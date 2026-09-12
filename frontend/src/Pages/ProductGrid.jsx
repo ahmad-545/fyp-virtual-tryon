@@ -4,6 +4,7 @@ import { AiOutlineShoppingCart, AiOutlineCamera } from "react-icons/ai";
 import { X, SlidersHorizontal, Filter, Check } from "lucide-react"; 
 import { useDispatch } from "react-redux";
 import { addToCart, openCart } from "../redux/cartSlice.js"; 
+import socket from "../utils/socket.js";
 
 export default function ProductGrid() {
   const dispatch = useDispatch();
@@ -86,6 +87,41 @@ export default function ProductGrid() {
   useEffect(() => {
     fetchProducts();
   }, [searchParams]);
+
+  // ============================================
+  // REAL-TIME SOCKET.IO LISTENERS
+  // ============================================
+  useEffect(() => {
+    // Naya product aaye toh list ke upar add kar do
+    const onProductAdded = ({ product }) => {
+      setProducts((prev) => {
+        if (prev.find((p) => p._id === product._id)) return prev;
+        return [product, ...prev];
+      });
+    };
+
+    // Product update ho (price, name, stock, images etc.)
+    const onProductUpdated = ({ product }) => {
+      setProducts((prev) =>
+        prev.map((p) => (p._id === product._id ? product : p))
+      );
+    };
+
+    // Product delete ho toh list se hata do
+    const onProductDeleted = ({ productId }) => {
+      setProducts((prev) => prev.filter((p) => p._id !== productId.toString()));
+    };
+
+    socket.on("product:added", onProductAdded);
+    socket.on("product:updated", onProductUpdated);
+    socket.on("product:deleted", onProductDeleted);
+
+    return () => {
+      socket.off("product:added", onProductAdded);
+      socket.off("product:updated", onProductUpdated);
+      socket.off("product:deleted", onProductDeleted);
+    };
+  }, []);
 
   // ============================================
   // FILTER TOGGLE HANDLERS (URL UPDATERS)
