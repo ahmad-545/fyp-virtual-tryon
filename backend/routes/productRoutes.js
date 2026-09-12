@@ -10,9 +10,16 @@ import {
   addReview,
   deleteReview,
   toggleReviewStatus,
+  updateProductInventory,
+  getInventorySummary,
 } from "../controllers/productController.js";
 
 const productRoutes = express.Router();
+
+// ============================================
+// INVENTORY SUMMARY (MUST BE BEFORE /:id)
+// ============================================
+productRoutes.get("/inventory/summary", getInventorySummary);
 
 // ============================================
 // ADD PRODUCT
@@ -31,6 +38,11 @@ productRoutes.post(
 // GET ALL PRODUCTS
 // ============================================
 productRoutes.get("/", listProduct);
+
+// ============================================
+// UPDATE PRODUCT INVENTORY (QUICK STOCK UPDATE)
+// ============================================
+productRoutes.put("/:id/inventory", updateProductInventory);
 
 // ============================================
 // GET SINGLE PRODUCT

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Menu, X, Search, Plus, Minus, ChevronDown, ShoppingBag } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom"; 
+import { Link, useNavigate, useLocation } from "react-router-dom"; 
 import { useSelector, useDispatch } from "react-redux";
 import { removeFromCart, openCart, closeCart, addToCart } from "../redux/cartSlice"; 
 import logo from "../assets/logo2.png"; 
@@ -8,10 +8,30 @@ import { FaWhatsapp } from "react-icons/fa";
 
 function Navbar() {
   const navigate = useNavigate(); 
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [mobileDropdown, setMobileDropdown] = useState("");
   const [searchQuery, setSearchQuery] = useState(""); 
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Check if current route is the homepage with the hero section
+  const isHome = location.pathname === "/" || location.pathname === "/home";
+  const isTransparent = isHome && !isScrolled;
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const dispatch = useDispatch();
   const cartItems = useSelector((state) => state.cart.items);
@@ -47,14 +67,27 @@ function Navbar() {
   };
 
   return (
-    <nav className="bg-white sticky top-0 z-50 border-b border-gray-100 shadow-sm">
+    <nav
+      className={`sticky top-0 z-50 transition-all duration-300 ${
+        isTransparent
+          ? "bg-transparent border-b border-neutral-200/20 shadow-none backdrop-blur-[1px]"
+          : "bg-white border-b border-gray-100 shadow-sm"
+      }`}
+    >
 
       {/* TOP BAR */}
-      <div className="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         <div className="flex justify-between h-20 items-center">
 
           {/* MOBILE MENU BUTTON */}
-          <button type="button" className="md:hidden p-2 text-gray-800 hover:text-[#C19A6B] transition cursor-pointer" onClick={() => setIsOpen(true)}>
+          <button
+            type="button"
+            className={`md:hidden p-2 transition cursor-pointer ${
+              isTransparent ? "text-gray-900 hover:text-[#C19A6B]" : "text-gray-800 hover:text-[#C19A6B]"
+            }`}
+            onClick={() => setIsOpen(true)}
+            aria-label="Toggle menu"
+          >
             <Menu size={24} />
           </button>
 
@@ -63,12 +96,14 @@ function Navbar() {
             <img 
               src={logo} 
               alt="TryLo Logo" 
-              className="h-24 sm:h-28 w-auto object-contain transition-transform duration-300 hover:scale-105" 
+              className="h-20 sm:h-24 md:h-28 w-auto object-contain transition-transform duration-300 hover:scale-105" 
             />
           </Link>
 
           {/* DESKTOP MENU */}
-          <div className="hidden md:flex items-center space-x-8 font-semibold text-gray-800 text-sm uppercase tracking-wide relative">
+          <div className={`hidden md:flex items-center space-x-7 lg:space-x-8 font-semibold text-sm uppercase tracking-wide relative ${
+            isTransparent ? "text-gray-900" : "text-gray-800"
+          }`}>
 
             <Link
               to="/"
@@ -164,18 +199,31 @@ function Navbar() {
             </Link>
 
             {/* TRY ON CLOTH */}
-            <Link to="/virtual-room" className="bg-[#C19A6B]/10 text-[#C19A6B] px-4 py-2 rounded-full hover:bg-[#C19A6B] hover:text-white transition-all duration-300 font-bold">
+            <Link
+              to="/virtual-room"
+              className={`px-4 py-2 rounded-full transition-all duration-300 font-bold text-xs tracking-wider uppercase ${
+                isTransparent
+                  ? "bg-neutral-950 text-white hover:bg-[#C19A6B] shadow-sm"
+                  : "bg-[#C19A6B]/10 text-[#C19A6B] hover:bg-[#C19A6B] hover:text-white"
+              }`}
+            >
               TRY ON CLOTH
             </Link>
 
           </div>
 
           {/* ICONS */}
-          <div className="flex items-center space-x-3 md:space-x-5">
+          <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-5">
 
             {/* SEARCH CONTAINER */}
             <div className="relative">
-              <button onClick={() => setShowSearch(!showSearch)} className="flex items-center justify-center p-2 text-gray-800 hover:text-[#C19A6B] transition cursor-pointer">
+              <button
+                onClick={() => setShowSearch(!showSearch)}
+                className={`flex items-center justify-center p-2 transition cursor-pointer ${
+                  isTransparent ? "text-gray-900 hover:text-[#C19A6B]" : "text-gray-800 hover:text-[#C19A6B]"
+                }`}
+                aria-label="Search"
+              >
                 <Search size={22} />
               </button>
               {showSearch && (
@@ -184,7 +232,7 @@ function Navbar() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleSearchSubmit} 
-                  className="absolute top-12 right-0 border border-gray-200 px-4 py-2.5 rounded-full w-56 sm:w-72 bg-white text-xs text-black focus:outline-none focus:ring-2 focus:ring-[#C19A6B] placeholder-gray-400 shadow-xl"
+                  className="absolute top-12 right-0 border border-gray-200 px-4 py-2.5 rounded-full w-56 sm:w-72 max-w-[calc(100vw-2rem)] bg-white text-xs text-black focus:outline-none focus:ring-2 focus:ring-[#C19A6B] placeholder-gray-400 shadow-xl z-50"
                   placeholder="Search products..."
                   autoFocus
                 />
@@ -192,7 +240,13 @@ function Navbar() {
             </div>
 
             {/* CART ICON */}
-            <button className="relative p-2 text-gray-800 hover:text-[#C19A6B] transition cursor-pointer" onClick={() => dispatch(openCart())}>
+            <button
+              className={`relative p-2 transition cursor-pointer ${
+                isTransparent ? "text-gray-900 hover:text-[#C19A6B]" : "text-gray-800 hover:text-[#C19A6B]"
+              }`}
+              onClick={() => dispatch(openCart())}
+              aria-label="Shopping Cart"
+            >
               <ShoppingBag size={22} />
               <span className="absolute top-1 right-1 bg-[#C19A6B] text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
                 {cartItems.reduce((acc, curr) => acc + (curr.quantity || 1), 0)}
@@ -204,8 +258,9 @@ function Navbar() {
               href="https://wa.me/923484236919?text=Hi%20I%20want%20to%20know%20more%20about%20your%20products"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ marginLeft: '10px', color: '#25D366', fontSize: '28px' }}
+              style={{ marginLeft: '6px', color: '#25D366', fontSize: '28px' }}
               className="flex items-center hover:scale-110 transition-transform"
+              aria-label="WhatsApp Contact"
             >
               <FaWhatsapp />
             </a>

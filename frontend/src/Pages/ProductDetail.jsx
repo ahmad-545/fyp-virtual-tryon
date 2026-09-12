@@ -7,10 +7,11 @@ import {
   AiOutlineCamera,
   AiFillStar,
 } from "react-icons/ai";
-import { Sparkles } from "lucide-react"; 
+import { Sparkles, ZoomIn } from "lucide-react"; 
 import { useDispatch } from "react-redux";
 import { addToCart, openCart } from "../redux/cartSlice.js"; 
 import TryOnModal from "./TryOnModel.jsx"; 
+import socket from "../utils/socket.js";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -31,6 +32,26 @@ export default function ProductDetail() {
   const [reviews, setReviews] = useState([]);
   const [newReview, setNewReview] = useState({ name: "", rating: 5, comment: "" });
 
+  // Zoom State
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+
+  const handleMouseMove = (e) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((e.clientX - left) / width) * 100));
+    const y = Math.max(0, Math.min(100, ((e.clientY - top) / height) * 100));
+    setZoomPos({ x, y });
+  };
+
+  const handleTouchMove = (e) => {
+    if (!e.touches || e.touches.length === 0) return;
+    const touch = e.touches[0];
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((touch.clientX - left) / width) * 100));
+    const y = Math.max(0, Math.min(100, ((touch.clientY - top) / height) * 100));
+    setZoomPos({ x, y });
+  };
+
   // ============================================
   // FETCH PRODUCT DETAILS
   // ============================================
@@ -45,7 +66,9 @@ export default function ProductDetail() {
         setProduct(p);
         const firstImg = p.images?.[0]?.url || p.images?.[0] || "";
         setMainImage(firstImg);
-        setSelectedSize(p.sizes?.[0]?.size || "M");
+        // Prioritize first size with available stock
+        const firstInStock = p.sizes?.find((s) => (Number(s.stock) || 0) > 0);
+        setSelectedSize(firstInStock ? firstInStock.size : (p.sizes?.[0]?.size || "M"));
         if (p.reviews) setReviews(p.reviews);
         if (p.category) fetchRelatedProducts(p.category);
       }
@@ -71,6 +94,44 @@ export default function ProductDetail() {
     fetchProduct();
     window.scrollTo(0, 0);
   }, [id]);
+
+  // ============================================
+  // REAL-TIME SOCKET.IO LISTENERS
+  // ============================================
+  useEffect(() => {
+    // Sirf current product ka update sunna hai
+    const onProductUpdated = ({ product: updatedProduct }) => {
+      if (!updatedProduct) return;
+      // id ya slug se match karo
+      const currentProductId = product?._id?.toString();
+      if (
+        updatedProduct._id?.toString() === currentProductId ||
+        updatedProduct.slug === id
+      ) {
+        setProduct(updatedProduct);
+        // Pehli image update karo
+        const firstImg = updatedProduct.images?.[0]?.url || updatedProduct.images?.[0] || "";
+        setMainImage(firstImg);
+        // Reviews bhi update karo
+        if (updatedProduct.reviews) setReviews(updatedProduct.reviews);
+      }
+    };
+
+    // Agar current product delete ho jaye toh shop page par bhejo
+    const onProductDeleted = ({ productId }) => {
+      if (product?._id?.toString() === productId?.toString()) {
+        navigate("/shop");
+      }
+    };
+
+    socket.on("product:updated", onProductUpdated);
+    socket.on("product:deleted", onProductDeleted);
+
+    return () => {
+      socket.off("product:updated", onProductUpdated);
+      socket.off("product:deleted", onProductDeleted);
+    };
+  }, [id, product?._id, navigate]);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -195,14 +256,58 @@ export default function ProductDetail() {
             })}
           </div>
 
-          {/* Main Display Image */}
-          <div className="flex-1 bg-gray-100 rounded-2xl overflow-hidden w-full aspect-[3/4] lg:aspect-[4/5] shadow-sm relative group">
-            <img src={mainImage || product.images?.[0]?.url || product.images?.[0]} alt={product.name} className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105" />
-            
+          {/* Main Display Image with Interactive Cursor & Touch Zoom */}
+          <div
+            onMouseEnter={() => setIsZoomed(true)}
+            onMouseLeave={() => setIsZoomed(false)}
+            onMouseMove={handleMouseMove}
+            onTouchStart={(e) => {
+              setIsZoomed(true);
+              handleTouchMove(e);
+            }}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={() => setIsZoomed(false)}
+            onClick={(e) => {
+              handleMouseMove(e);
+              setIsZoomed((prev) => !prev);
+            }}
+            className="flex-1 bg-gray-100 rounded-2xl overflow-hidden w-full aspect-[3/4] lg:aspect-[4/5] shadow-sm relative group cursor-crosshair select-none touch-none"
+          >
+            <img
+              src={mainImage || product.images?.[0]?.url || product.images?.[0]}
+              alt={product.name}
+              style={{
+                transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                transform: isZoomed ? "scale(2.5)" : "scale(1)",
+                transition: isZoomed
+                  ? "transform 0.08s ease-out"
+                  : "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+              }}
+              className="w-full h-full object-cover object-center pointer-events-none will-change-transform"
+            />
+
+            {/* Floating Zoom Indicator Pill */}
+            <div
+              className={`absolute bottom-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-black/65 backdrop-blur-md text-white text-[11px] font-medium rounded-full pointer-events-none transition-all duration-300 border border-white/15 ${
+                isZoomed
+                  ? "opacity-0 translate-y-2"
+                  : "opacity-85 group-hover:opacity-100 translate-y-0"
+              }`}
+            >
+              <ZoomIn size={13} className="text-[#C19A6B]" />
+              <span>Hover or touch to zoom</span>
+            </div>
+
             {product.status && product.status !== "normal" && (
-              <span className={`absolute top-4 left-4 text-white text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-md shadow-sm z-10 ${
-                product.status === "sale" ? "bg-rose-600" : product.status === "new" ? "bg-[#C19A6B]" : "bg-gray-800"
-              }`}>
+              <span
+                className={`absolute top-4 left-4 text-white text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-md shadow-sm z-10 pointer-events-none ${
+                  product.status === "sale"
+                    ? "bg-rose-600"
+                    : product.status === "new"
+                    ? "bg-[#C19A6B]"
+                    : "bg-gray-800"
+                }`}
+              >
                 {product.status}
               </span>
             )}
@@ -244,82 +349,129 @@ export default function ProductDetail() {
           </div>
           
           {/* SIZES */}
-          {product.sizes && product.sizes.length > 0 && (
-            <div className="mb-8">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900">Select Size</h3>
-                <span 
-                  onClick={() => setIsSizeGuideOpen(true)}
-                  className="text-[11px] text-[#C19A6B] font-semibold cursor-pointer hover:underline"
-                >
-                  Size Guide
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                {product.sizes.map((item, index) => (
+          {(() => {
+            const currentSizeObj = product.sizes?.find((s) => s.size === selectedSize);
+            const currentSizeStock = currentSizeObj ? (Number(currentSizeObj.stock) || 0) : (Number(product.totalStock) || 0);
+            const isOutOfStock = (Number(product.totalStock) || 0) === 0 || currentSizeStock === 0;
+
+            return (
+              <>
+                {product.sizes && product.sizes.length > 0 && (
+                  <div className="mb-8">
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900">Select Size</h3>
+                        {currentSizeStock > 0 && currentSizeStock <= 3 && (
+                          <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full animate-pulse">
+                            Only {currentSizeStock} left!
+                          </span>
+                        )}
+                      </div>
+                      <span 
+                        onClick={() => setIsSizeGuideOpen(true)}
+                        className="text-[11px] text-[#C19A6B] font-semibold cursor-pointer hover:underline"
+                      >
+                        Size Guide
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {product.sizes.map((item, index) => {
+                        const isSoldOut = (Number(item.stock) || 0) === 0;
+                        return (
+                          <button 
+                            key={index} 
+                            type="button"
+                            onClick={() => {
+                              setSelectedSize(item.size);
+                              setQuantity(1);
+                            }} 
+                            className={`relative border px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                              selectedSize === item.size 
+                                ? "bg-black text-white border-black shadow-md" 
+                                : isSoldOut
+                                ? "bg-gray-50 text-gray-400 border-gray-200 line-through opacity-60"
+                                : "bg-white text-gray-800 border-gray-200 hover:border-black"
+                            }`}
+                            title={isSoldOut ? `Size ${item.size} is Sold Out` : `Size ${item.size}: ${item.stock} in stock`}
+                          >
+                            <span>{item.size}</span>
+                            {isSoldOut && (
+                              <span className="text-[9px] no-underline font-normal text-rose-500 font-sans">
+                                (Sold)
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* QUANTITY */}
+                <div className="mb-8">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">Quantity</h3>
+                  <div className="flex items-center border border-gray-200 w-fit rounded-xl overflow-hidden bg-white shadow-sm">
+                    <button 
+                      type="button"
+                      disabled={isOutOfStock || quantity <= 1}
+                      onClick={() => setQuantity(q => Math.max(1, q - 1))} 
+                      className="w-11 h-11 flex items-center justify-center hover:bg-gray-100 transition text-gray-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <AiOutlineMinus />
+                    </button>
+                    <span className="w-12 text-center text-xs font-bold text-gray-900">{isOutOfStock ? 0 : quantity}</span>
+                    <button 
+                      type="button"
+                      disabled={isOutOfStock || (currentSizeStock > 0 && quantity >= currentSizeStock)}
+                      onClick={() => setQuantity(q => Math.min(currentSizeStock || 1, q + 1))} 
+                      className="w-11 h-11 flex items-center justify-center hover:bg-gray-100 transition text-gray-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <AiOutlinePlus />
+                    </button>
+                  </div>
+                </div>
+
+                {/* ACTIONS */}
+                <div className="flex flex-col sm:flex-row gap-3.5 mb-8">
                   <button 
-                    key={index} 
                     type="button"
-                    onClick={() => setSelectedSize(item.size)} 
-                    className={`border px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      selectedSize === item.size 
-                        ? "bg-black text-white border-black shadow-md" 
-                        : "bg-white text-gray-800 border-gray-200 hover:border-black"
+                    disabled={isOutOfStock}
+                    onClick={handleAddToCart} 
+                    className={`flex-[2] py-4 rounded-xl flex items-center justify-center gap-2.5 transition shadow-lg text-xs font-bold uppercase tracking-widest ${
+                      isOutOfStock 
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none" 
+                        : "bg-black text-white hover:bg-gray-800 cursor-pointer"
                     }`}
                   >
-                    {item.size}
+                    <AiOutlineShoppingCart className="text-base" /> {isOutOfStock ? "Out of Stock" : "Add To Cart"}
                   </button>
-                ))}
-              </div>
-            </div>
-          )}
+                  <button 
+                    type="button"
+                    onClick={() => setIsModalOpen(true)} 
+                    className="flex-1 bg-[#C19A6B] text-white py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-[#a88255] transition text-xs font-bold uppercase tracking-widest shadow-md cursor-pointer"
+                  >
+                    <Sparkles size={16} /> Try On Cloth
+                  </button>
+                </div>
 
-          {/* QUANTITY */}
-          <div className="mb-8">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">Quantity</h3>
-            <div className="flex items-center border border-gray-200 w-fit rounded-xl overflow-hidden bg-white shadow-sm">
-              <button 
-                type="button"
-                onClick={() => setQuantity(q => Math.max(1, q - 1))} 
-                className="w-11 h-11 flex items-center justify-center hover:bg-gray-100 transition text-gray-600 cursor-pointer"
-              >
-                <AiOutlineMinus />
-              </button>
-              <span className="w-12 text-center text-xs font-bold text-gray-900">{quantity}</span>
-              <button 
-                type="button"
-                onClick={() => setQuantity(q => q + 1)} 
-                className="w-11 h-11 flex items-center justify-center hover:bg-gray-100 transition text-gray-600 cursor-pointer"
-              >
-                <AiOutlinePlus />
-              </button>
-            </div>
-          </div>
-
-          {/* ACTIONS */}
-          <div className="flex flex-col sm:flex-row gap-3.5 mb-8">
-            <button 
-              type="button"
-              onClick={handleAddToCart} 
-              className="flex-[2] bg-black text-white py-4 rounded-xl flex items-center justify-center gap-2.5 hover:bg-gray-800 transition shadow-lg text-xs font-bold uppercase tracking-widest cursor-pointer"
-            >
-              <AiOutlineShoppingCart className="text-base" /> Add To Cart
-            </button>
-            <button 
-              type="button"
-              onClick={() => setIsModalOpen(true)} 
-              className="flex-1 bg-[#C19A6B] text-white py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-[#a88255] transition text-xs font-bold uppercase tracking-widest shadow-md cursor-pointer"
-            >
-              <Sparkles size={16} /> Try On Cloth
-            </button>
-          </div>
-
-          {/* ADDITIONAL DETAILS */}
-          <div className="border-t border-gray-100 pt-6 text-xs text-gray-500 space-y-2 font-medium">
-            <p><strong className="text-gray-900 uppercase">Style:</strong> {product.styleType || "Standard"}</p>
-            <p><strong className="text-gray-900 uppercase">Category:</strong> {product.subcategory || product.category}</p>
-            <p><strong className="text-gray-900 uppercase">Availability:</strong> <span className="text-emerald-600 font-bold">In Stock</span></p>
-          </div>
+                {/* ADDITIONAL DETAILS */}
+                <div className="border-t border-gray-100 pt-6 text-xs text-gray-500 space-y-2 font-medium">
+                  <p><strong className="text-gray-900 uppercase">Style:</strong> {product.styleType || "Standard"}</p>
+                  <p><strong className="text-gray-900 uppercase">Category:</strong> {product.subcategory || product.category}</p>
+                  <p className="flex items-center gap-2">
+                    <strong className="text-gray-900 uppercase">Availability:</strong>
+                    {isOutOfStock ? (
+                      <span className="text-rose-600 font-bold bg-rose-50 px-2.5 py-0.5 rounded-full text-xs">Out of Stock</span>
+                    ) : currentSizeStock <= 3 ? (
+                      <span className="text-amber-600 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full text-xs">Low Stock ({currentSizeStock} units left)</span>
+                    ) : (
+                      <span className="text-emerald-600 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full text-xs">In Stock ({currentSizeStock} available)</span>
+                    )}
+                  </p>
+                </div>
+              </>
+            );
+          })()}
         </div>
       </div>
 

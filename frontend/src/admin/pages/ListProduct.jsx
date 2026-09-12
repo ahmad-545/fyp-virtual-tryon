@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Search, Trash2, Edit, Package, AlertCircle, Filter, X, Plus, ImagePlus, Loader2, Star, TrendingUp } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Search, Trash2, Edit, Package, AlertCircle, Filter, X, Plus, ImagePlus, Loader2, Star, TrendingUp, Boxes } from "lucide-react";
+import socket from "../../utils/socket.js";
 
 export default function ListProduct() {
   const [products, setProducts] = useState([]);
@@ -69,6 +71,42 @@ export default function ListProduct() {
     }, 300);
     return () => clearTimeout(delayDebounce);
   }, [search, category]);
+
+  // ============================================
+  // REAL-TIME SOCKET.IO LISTENERS
+  // ============================================
+  useEffect(() => {
+    // Naya product add ho toh list mein upar add kar do
+    const onProductAdded = ({ product }) => {
+      setProducts((prev) => {
+        // Duplicate check
+        if (prev.find((p) => p._id === product._id)) return prev;
+        return [product, ...prev];
+      });
+    };
+
+    // Product update ho toh existing item replace kar do
+    const onProductUpdated = ({ product }) => {
+      setProducts((prev) =>
+        prev.map((p) => (p._id === product._id ? product : p))
+      );
+    };
+
+    // Product delete ho toh list se nikal do
+    const onProductDeleted = ({ productId }) => {
+      setProducts((prev) => prev.filter((p) => p._id !== productId.toString()));
+    };
+
+    socket.on("product:added", onProductAdded);
+    socket.on("product:updated", onProductUpdated);
+    socket.on("product:deleted", onProductDeleted);
+
+    return () => {
+      socket.off("product:added", onProductAdded);
+      socket.off("product:updated", onProductUpdated);
+      socket.off("product:deleted", onProductDeleted);
+    };
+  }, []);
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
@@ -226,8 +264,17 @@ export default function ListProduct() {
               Manage, search, edit, and monitor your store's active product listings.
             </p>
           </div>
-          <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl text-white text-sm font-semibold border border-white/20">
-            Total Items: {products.length}
+          <div className="flex items-center gap-3">
+            <Link
+              to="/admin/inventory"
+              className="flex items-center gap-1.5 bg-white text-gray-900 hover:bg-gray-100 px-3.5 py-2 rounded-xl text-xs font-bold shadow-md transition"
+            >
+              <Boxes size={15} className="text-[#C19A6B]" />
+              Stock Manager
+            </Link>
+            <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl text-white text-sm font-semibold border border-white/20">
+              Total Items: {products.length}
+            </div>
           </div>
         </div>
 
@@ -347,6 +394,13 @@ export default function ListProduct() {
                         </td>
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
+                            <Link
+                              to="/admin/inventory"
+                              className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition shadow-sm"
+                              title="Stock / Inventory"
+                            >
+                              <Boxes size={15} />
+                            </Link>
                             <button
                               onClick={() => handleEditClick(item)}
                               className="p-1.5 bg-[#C19A6B]/10 hover:bg-[#C19A6B]/20 text-[#C19A6B] rounded-lg transition shadow-sm"
@@ -406,12 +460,15 @@ export default function ListProduct() {
                         </span>
                       </div>
                     </div>
-                    <div className="mt-3 pt-2.5 border-t border-gray-100 grid grid-cols-2 gap-2">
-                      <button onClick={() => handleEditClick(item)} className="py-2 bg-[#C19A6B]/10 text-[#C19A6B] rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition">
-                        <Edit size={14} /> Edit
+                    <div className="mt-3 pt-2.5 border-t border-gray-100 grid grid-cols-3 gap-2">
+                      <Link to="/admin/inventory" className="py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition">
+                        <Boxes size={13} /> Stock
+                      </Link>
+                      <button onClick={() => handleEditClick(item)} className="py-2 bg-[#C19A6B]/10 text-[#C19A6B] rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition">
+                        <Edit size={13} /> Edit
                       </button>
-                      <button onClick={() => handleDelete(item._id)} className="py-2 bg-red-50 text-red-600 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition">
-                        <Trash2 size={14} /> Delete
+                      <button onClick={() => handleDelete(item._id)} className="py-2 bg-red-50 text-red-600 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition">
+                        <Trash2 size={13} /> Delete
                       </button>
                     </div>
                   </div>

@@ -7,6 +7,8 @@ import {
   ListChecks,
   PackageSearch,
   Package,
+  Boxes,
+  Users,
   X
 } from "lucide-react";
 
@@ -18,28 +20,35 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
       icon: LayoutDashboard,
       path: "/admin",
     },
-
+    {
+      name: "Inventory",
+      icon: Boxes,
+      path: "/admin/inventory",
+    },
     {
       name: "Add Product",
       icon: PlusCircle,
       path: "/admin/add-product",
     },
-
     {
       name: "Products",
       icon: ListChecks,
       path: "/admin/list-products"
     },
-
     {
       name: "Orders",
       icon: PackageSearch,
       path: "/admin/orders",
     },
     {
+      name: "Customers",
+      icon: Users,
+      path: "/admin/customers",
+    },
+    {
       name: "Reviews",
       icon: Package,
-      path: "/admin/reviews" // 👈 Corrected path to match admin sub-routing structure
+      path: "/admin/reviews"
     }
   ];
 

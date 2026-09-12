@@ -16,7 +16,10 @@ import VirtualTryOnPromo from "./VirtualTryOnPromo";
 import Trending from "./Trending";
 import Timer from "./Timer";
 import Feature from "./Feature";
-import Footer from "../components/Footer";
+import WhyTrylo from "./WhyTrylo";
+import Testimonials from "./Testimonials";
+import Newsletter from "./Newsletter";
+import TrustBadges from "./TrustBadges";
 import home1 from "../assets/Videos/home 1.mp4";
 import home2 from "../assets/Videos/home 2.mp4";
 import home3 from "../assets/Videos/home 3.mp4";
@@ -57,7 +60,7 @@ function Home() {
 
   return (
     <>
-      <div className="relative w-full h-[500px] sm:h-[600px] md:h-[calc(100vh-80px)] overflow-hidden">
+      <div className="relative w-full -mt-20 h-[560px] sm:h-[650px] md:h-[calc(100vh-38px)] min-h-[560px] overflow-hidden">
         <Swiper
           modules={[Autoplay, Pagination, Navigation, EffectFade]}
           autoplay={{ delay: 4000, disableOnInteraction: false }}
@@ -73,7 +76,7 @@ function Home() {
         >
           {slides.map((slide) => (
             <SwiperSlide key={slide.id}>
-              <section className="relative w-full h-full bg-neutral-100 flex items-center">
+              <section className="relative w-full h-full bg-neutral-100 flex items-center pt-20">
                 
                 {/* Check if slide has a video or image */}
                 {slide.video ? (
@@ -98,7 +101,7 @@ function Home() {
 
                 {/* Content Layer */}
                 <div className="max-w-7xl mx-auto px-6 lg:px-12 w-full relative z-20">
-                  <div className="max-w-[650px] flex flex-col items-start space-y-6">
+                  <div className="max-w-[650px] flex flex-col items-start space-y-6 pt-4 sm:pt-6 md:pt-0">
                     <p className="text-[#C19A6B] text-xs font-mono tracking-[0.3em] uppercase">{slide.tag}</p>
                     <h1 className="text-4xl sm:text-6xl lg:text-7xl font-serif font-medium leading-[1.1] whitespace-pre-line text-neutral-900">{slide.title}</h1>
                     <p className="text-neutral-600 text-lg md:text-xl font-light">{slide.subtitle}</p>
@@ -116,10 +119,10 @@ function Home() {
         </Swiper>
 
         {/* Custom Navigation Arrows */}
-        <button className="custom-prev absolute left-4 lg:left-10 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-white/80 backdrop-blur-md border border-neutral-200 flex items-center justify-center hover:bg-black hover:text-white transition-all">
+        <button className="custom-prev absolute left-4 lg:left-10 top-1/2 -translate-y-1/2 mt-10 z-30 w-12 h-12 rounded-full bg-white/80 backdrop-blur-md border border-neutral-200 flex items-center justify-center hover:bg-black hover:text-white transition-all shadow-sm">
           <ChevronLeft size={20} />
         </button>
-        <button className="custom-next absolute right-4 lg:right-10 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-white/80 backdrop-blur-md border border-neutral-200 flex items-center justify-center hover:bg-black hover:text-white transition-all">
+        <button className="custom-next absolute right-4 lg:right-10 top-1/2 -translate-y-1/2 mt-10 z-30 w-12 h-12 rounded-full bg-white/80 backdrop-blur-md border border-neutral-200 flex items-center justify-center hover:bg-black hover:text-white transition-all shadow-sm">
           <ChevronRight size={20} />
         </button>
       </div>
@@ -129,6 +132,10 @@ function Home() {
       <Trending />
       <Timer />
       <Feature />
+      <WhyTrylo />
+      <Testimonials />
+      <Newsletter />
+      <TrustBadges />
     </>
   );
 }

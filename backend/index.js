@@ -2,6 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 import connectDB from "./config/db.js";
 import adminRoute from "./routes/adminRoutes.js";
@@ -9,6 +11,7 @@ import productRoutes from "./routes/productRoutes.js";
 import orderRoutes from "./routes/oderRoutes.js";
 import subscriberRouter from "./routes/subscriberRoutes.js";
 import chatRouter from "./routes/chatRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
 
 dotenv.config();
 
@@ -16,6 +19,32 @@ console.log("ENV CHECK");
 console.log("MONGO_URI =", process.env.MONGO_URI);
 
 const app = express();
+
+// ============================================
+// HTTP SERVER + SOCKET.IO SETUP
+// ============================================
+const httpServer = createServer(app);
+
+export const io = new Server(httpServer, {
+  cors: {
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:5175",
+      "https://trylo.store",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log(`🔌 Socket Connected: ${socket.id}`);
+
+  socket.on("disconnect", () => {
+    console.log(`❌ Socket Disconnected: ${socket.id}`);
+  });
+});
 
 // Database Connection
 connectDB();
@@ -41,7 +70,9 @@ app.use("/api/admin", adminRoute);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/subscriber", subscriberRouter);
+app.use("/api/subscribers", subscriberRouter);
 app.use("/api", chatRouter);
+app.use("/api/reviews", reviewRoutes);
 
 // Test Route
 app.get("/", (req, res) => {
@@ -61,6 +92,8 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 8000;
 
-app.listen(PORT, () => {
+// Use httpServer instead of app.listen (for Socket.io)
+httpServer.listen(PORT, () => {
   console.log(`🚀 Server Running : http://localhost:${PORT}`);
+  console.log(`🔌 Socket.IO Ready on port ${PORT}`);
 });

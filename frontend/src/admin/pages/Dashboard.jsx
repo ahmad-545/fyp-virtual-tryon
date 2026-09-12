@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import {
   Package, ShoppingCart, DollarSign, TrendingUp, ArrowUpRight, 
-  Loader2, AlertCircle, Clock, CheckCircle, Truck, MessageSquare
+  Loader2, AlertCircle, Clock, CheckCircle, Truck, MessageSquare,
+  Boxes, AlertTriangle
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 
@@ -11,8 +12,10 @@ const Dashboard = () => {
   const [stats, setStats] = useState({
     totalProducts: 0, totalOrders: 0, revenue: 0,
     pendingOrders: 0, deliveredOrders: 0, totalReviews: 0,
+    lowStockCount: 0,
   });
   const [recentOrders, setRecentOrders] = useState([]);
+  const [lowStockItems, setLowStockItems] = useState([]);
   const [salesData, setSalesData] = useState([]);
   const [viewType, setViewType] = useState("monthly");
   const [loading, setLoading] = useState(true);
@@ -33,9 +36,15 @@ const Dashboard = () => {
 
         // Count total reviews across all products
         let reviewCount = 0;
+        const lowStock = [];
+
         products.forEach(product => {
           if (product.reviews && product.reviews.length > 0) {
             reviewCount += product.reviews.length;
+          }
+          const st = Number(product.totalStock) || 0;
+          if (st <= 5) {
+            lowStock.push(product);
           }
         });
 
@@ -50,12 +59,14 @@ const Dashboard = () => {
           pendingOrders: pending,
           deliveredOrders: delivered,
           totalReviews: reviewCount,
+          lowStockCount: lowStock.length,
         });
 
+        setLowStockItems(lowStock.slice(0, 5));
         setRecentOrders(orders.slice(0, 5));
 
         // ==========================================
-        // FIXED & ROBUST GRAPH DATA PROCESSING
+        // GRAPH DATA PROCESSING
         // ==========================================
         const monthlyMap = { Jan: 0, Feb: 0, Mar: 0, Apr: 0, May: 0, Jun: 0, Jul: 0, Aug: 0, Sep: 0, Oct: 0, Nov: 0, Dec: 0 };
         const weeklyMap = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
@@ -103,7 +114,6 @@ const Dashboard = () => {
     fetchDashboardData();
   }, [viewType]);
 
-  // 👇 Saare 5 cards yahan shamil hain (Products, Orders, Revenue, Pending, Reviews)
   const cards = [
     { title: "Total Products", value: stats.totalProducts, icon: Package, bg: "bg-[#C19A6B]/10 text-[#C19A6B]", border: "border-[#C19A6B]/20" },
     { title: "Total Orders", value: stats.totalOrders, icon: ShoppingCart, bg: "bg-emerald-50 text-emerald-600", border: "border-emerald-100" },
@@ -135,12 +145,21 @@ const Dashboard = () => {
             Welcome back! Here's your store's live performance overview.
           </p>
         </div>
-        <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-sm font-semibold border border-white/20">
-          Store Status: <span className="text-emerald-300 font-bold">Active</span>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/admin/inventory"
+            className="bg-white text-gray-900 px-4 py-2 rounded-xl text-xs font-bold hover:bg-gray-100 transition shadow flex items-center gap-1.5"
+          >
+            <Boxes size={15} className="text-[#C19A6B]" />
+            Manage Inventory
+          </Link>
+          <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-sm font-semibold border border-white/20">
+            Store: <span className="text-emerald-300 font-bold">Active</span>
+          </div>
         </div>
       </div>
 
-      {/* CARDS GRID (Updated to 5 columns layout for desktop/tablet) */}
+      {/* CARDS GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
         {cards.map((card, index) => {
           const Icon = card.icon;
@@ -187,19 +206,19 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Recharts Bar Chart */}
-          <div className="h-64 w-full pt-4">
+          <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={salesData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#888888" />
-                <YAxis tick={{ fontSize: 12 }} stroke="#888888" />
-                <Tooltip 
-                  formatter={(value) => [`Rs. ${value.toLocaleString()}`, "Revenue"]}
-                  contentStyle={{ backgroundColor: "#000", border: "none", borderRadius: "8px", color: "#fff" }}
+              <BarChart data={salesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                <Tooltip
+                  cursor={{ fill: "#f8fafc" }}
+                  contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
+                  formatter={(value) => [`Rs. ${value.toLocaleString()}`, "Sales"]}
                 />
                 <Bar dataKey="sales" radius={[6, 6, 0, 0]}>
-                  {salesData.map((entry, index) => (
+                  {salesData.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={barColors[index % barColors.length]} />
                   ))}
                 </Bar>
@@ -215,7 +234,7 @@ const Dashboard = () => {
           <div className="space-y-5">
             <div>
               <div className="flex justify-between text-xs font-bold uppercase tracking-wide text-gray-600 mb-1.5">
-                <span>Total Inventory Items</span>
+                <span>Total Catalog Items</span>
                 <span className="text-[#C19A6B]">{stats.totalProducts}</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
@@ -245,17 +264,71 @@ const Dashboard = () => {
 
             <div>
               <div className="flex justify-between text-xs font-bold uppercase tracking-wide text-gray-600 mb-1.5">
-                <span>Customer Reviews</span>
-                <span className="text-rose-600">{stats.totalReviews}</span>
+                <span>Low Stock Warning</span>
+                <span className={stats.lowStockCount > 0 ? "text-rose-600 font-extrabold" : "text-emerald-600"}>
+                  {stats.lowStockCount} items
+                </span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                <div className="bg-rose-500 h-2 rounded-full w-[60%]" />
+                <div className={`h-2 rounded-full ${stats.lowStockCount > 0 ? "bg-rose-500 w-[60%]" : "bg-emerald-500 w-[10%]"}`} />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between text-xs font-bold uppercase tracking-wide text-gray-600 mb-1.5">
+                <span>Customer Reviews</span>
+                <span className="text-purple-600">{stats.totalReviews}</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                <div className="bg-purple-500 h-2 rounded-full w-[50%]" />
               </div>
             </div>
           </div>
         </div>
 
       </div>
+
+      {/* LOW STOCK ALERT BANNER / WIDGET */}
+      {lowStockItems.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 md:p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2.5 text-amber-900">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+              <div>
+                <h3 className="text-sm font-extrabold uppercase tracking-wide">Inventory Attention Required</h3>
+                <p className="text-xs text-amber-700">The following products have 5 or fewer units remaining in stock:</p>
+              </div>
+            </div>
+            <Link
+              to="/admin/inventory"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 bg-amber-200/70 hover:bg-amber-300 px-3.5 py-1.5 rounded-lg transition"
+            >
+              Go to Inventory <ArrowUpRight size={14} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            {lowStockItems.map((prod) => (
+              <div key={prod._id} className="bg-white p-3 rounded-xl border border-amber-200/60 shadow-xs flex items-center gap-3">
+                <img
+                  src={prod.images?.[0]?.url || "/placeholder.png"}
+                  alt={prod.name}
+                  className="w-10 h-12 object-cover rounded-lg border bg-gray-50 shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-gray-900 truncate">{prod.name}</p>
+                  <p className="text-[11px] font-mono text-gray-400">SKU: {prod.sku}</p>
+                  <span className={`inline-block mt-0.5 text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                    (prod.totalStock || 0) === 0 ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-800"
+                  }`}>
+                    {prod.totalStock || 0} left
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* RECENT ORDERS TABLE */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
