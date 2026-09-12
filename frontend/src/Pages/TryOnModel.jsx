@@ -125,11 +125,14 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
 
   if (isOpen === false) return null;
 
+  const [statusMessage, setStatusMessage] = useState("");
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setSelectedFile(file);
       setImagePreview(URL.createObjectURL(file));
+      setAiResult(null);
     }
   };
 
@@ -164,7 +167,8 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
       );
 
       if (response.data.success) {
-        setAiResult({ renderOutput2D: response.data.tryOnImage });
+        setStatusMessage("Try-On complete!");
+        setAiResult({ renderOutput2D: response.data.result_url || response.data.tryOnImage });
       } else {
         alert(response.data.message || 'AI execution error.');
       }
@@ -173,6 +177,32 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
       alert('AI Pipeline error or image upload timeout.');
     } finally {
       setLoading(false);
+      setStatusMessage("");
+    }
+  };
+
+  // ── REVIEW SUBMIT ─────────────────────────
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (reviewData.rating === 0) return alert('Please select a star rating.');
+    if (!reviewData.name.trim()) return alert('Please enter your name.');
+    if (!reviewData.comment.trim()) return alert('Please write about your experience.');
+
+    setReviewLoading(true);
+    try {
+      await axios.post('http://localhost:8000/api/reviews', {
+        name: reviewData.name.trim(),
+        role: reviewData.role.trim() || 'Virtual Try-On User',
+        rating: reviewData.rating,
+        comment: reviewData.comment.trim(),
+        productName: activeProduct?.name || '',
+      });
+      setReviewSubmitted(true);
+    } catch (error) {
+      console.error('Review submit error:', error);
+      alert('Failed to submit review. Please try again.');
+    } finally {
+      setReviewLoading(false);
     }
   };
 

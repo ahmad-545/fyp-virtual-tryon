@@ -1,3 +1,4 @@
+import axios from "axios";
 import Product from "../models/Product.js";
 import uploadoncloudinary, {
   deleteFromCloudinary,
@@ -123,6 +124,36 @@ export const addProduct = async (req, res) => {
     );
 
     // ==========================
+    // Pipeline A: SAM Segmentation
+    // ==========================
+    const virtualTryOnBool =
+      isVirtualTryOnEnabled === "true" || isVirtualTryOnEnabled === true;
+
+    let cleanGarmentUrl = "";
+    let isProcessedByAI = false;
+
+    if (virtualTryOnBool && images.length > 0) {
+      try {
+        const aiServerUrl = process.env.AI_SERVER_URL || "http://127.0.0.1:8001";
+        console.log(`🤖 Triggering Pipeline A: Calling FastAPI ${aiServerUrl}/process-garment for SKU: ${sku}...`);
+
+        const aiRes = await axios.post(`${aiServerUrl}/process-garment`, {
+          product_id: sku,
+          raw_image_url: images[0].url,
+        });
+
+        if (aiRes.data && aiRes.data.clean_garment_url) {
+          cleanGarmentUrl = aiRes.data.clean_garment_url;
+          isProcessedByAI = true;
+          console.log("✅ Pipeline A Success! Clean Garment URL cached:", cleanGarmentUrl);
+        }
+      } catch (aiErr) {
+        console.error("⚠️ Pipeline A Warning: AI Server segmentation call failed:", aiErr.message);
+        cleanGarmentUrl = images[0].url;
+      }
+    }
+
+    // ==========================
     // Create Product
     // ==========================
 
@@ -148,9 +179,9 @@ export const addProduct = async (req, res) => {
 
       totalStock,
 
-      isVirtualTryOnEnabled:
-        isVirtualTryOnEnabled === "true" ||
-        isVirtualTryOnEnabled === true,
+      isVirtualTryOnEnabled: virtualTryOnBool,
+      cleanGarmentUrl,
+      isProcessedByAI,
     });
 
     // 🔌 Real-time: Notify all clients about new product
@@ -714,4 +745,4 @@ export const getInventorySummary = async (req, res) => {
       message: error.message,
     });
   }
-};
+};
