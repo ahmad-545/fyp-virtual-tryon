@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Search, Trash2, Edit, Package, AlertCircle, Filter, X, Plus, ImagePlus, Loader2, Star, TrendingUp } from "lucide-react";
+import { Search, Trash2, Edit, Package, AlertCircle, Filter, X, Plus, ImagePlus, Loader2, Star, TrendingUp, Sparkles } from "lucide-react";
 
 export default function ListProduct() {
   const [products, setProducts] = useState([]);
@@ -13,6 +13,27 @@ export default function ListProduct() {
   const [files, setFiles] = useState([null, null, null]);
   const [previews, setPreviews] = useState([null, null, null]);
   const [existingImages, setExistingImages] = useState([]);
+  const [processingId, setProcessingId] = useState(null);
+
+  const handleProcessGarment = async (id) => {
+    try {
+      setProcessingId(id);
+      const res = await fetch(`http://localhost:8000/api/products/${id}/process-garment`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("✨ " + (data.message || "Garment segmented and cached successfully!"));
+        fetchProducts();
+      } else {
+        alert(data.message || "Segmentation failed.");
+      }
+    } catch (err) {
+      alert("Error: " + err.message);
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
   // ============================================
   // FETCH PRODUCTS WITH ENHANCED SEARCH LOGIC
@@ -347,6 +368,22 @@ export default function ListProduct() {
                         </td>
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleProcessGarment(item._id)}
+                              disabled={processingId === item._id}
+                              className={`p-1.5 rounded-lg transition shadow-sm ${
+                                item.cleanGarmentUrl
+                                  ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300"
+                                  : "bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-300"
+                              }`}
+                              title={item.cleanGarmentUrl ? "AI Segmented (Cached) - Click to Re-process" : "Run SAM Garment Segmentation (Pipeline A)"}
+                            >
+                              {processingId === item._id ? (
+                                <Loader2 size={15} className="animate-spin text-purple-700" />
+                              ) : (
+                                <Sparkles size={15} />
+                              )}
+                            </button>
                             <button
                               onClick={() => handleEditClick(item)}
                               className="p-1.5 bg-[#C19A6B]/10 hover:bg-[#C19A6B]/20 text-[#C19A6B] rounded-lg transition shadow-sm"
