@@ -23,3 +23,8 @@ class TryOnResponse(BaseModel):
     result_url: str
     status: str
     message: str
+    # Pipeline B intermediate outputs
+    human_parsing_url: Optional[str] = None
+    pose_map_url: Optional[str] = None
+    agnostic_mask_url: Optional[str] = None
+    agnostic_image_url: Optional[str] = None

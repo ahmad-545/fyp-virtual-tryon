@@ -27,6 +27,21 @@ const tryOnSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    humanParsingUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    poseMapUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    agnosticMaskUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     status: {
       type: String,
       enum: ["success", "failed", "processing"],

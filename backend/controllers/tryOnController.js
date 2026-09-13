@@ -99,7 +99,17 @@ export const executeTryOn = async (req, res) => {
     });
 
     const resultUrl = aiRes.data.result_url;
+    const humanParsingUrl = aiRes.data.human_parsing_url || null;
+    const poseMapUrl = aiRes.data.pose_map_url || null;
+    const agnosticMaskUrl = aiRes.data.agnostic_mask_url || null;
+    const agnosticImageUrl = aiRes.data.agnostic_image_url || null;
+
     console.log("🎉 Try-On Generation complete! Result URL:", resultUrl);
+    console.log("📊 Pipeline B Intermediates:");
+    console.log("   Human Parsing:", humanParsingUrl);
+    console.log("   Pose Map:", poseMapUrl);
+    console.log("   Agnostic Mask:", agnosticMaskUrl);
+    console.log("   Agnostic Image:", agnosticImageUrl);
 
     // 4. Save Try-On session in MongoDB (linked to user + product)
     let tryOnRecord = null;
@@ -110,6 +120,9 @@ export const executeTryOn = async (req, res) => {
         userPhotoUrl,
         cleanGarmentUrl,
         resultUrl,
+        humanParsingUrl,
+        poseMapUrl,
+        agnosticMaskUrl,
         status: "success",
       });
     }
@@ -121,6 +134,10 @@ export const executeTryOn = async (req, res) => {
       tryOnImage: resultUrl, // alias for frontend backward compatibility
       clean_garment_url: cleanGarmentUrl,
       user_photo_url: userPhotoUrl,
+      human_parsing_url: humanParsingUrl,
+      pose_map_url: poseMapUrl,
+      agnostic_mask_url: agnosticMaskUrl,
+      agnostic_image_url: agnosticImageUrl,
       tryOnId: tryOnRecord?._id || null,
       message: "Virtual Try-On completed successfully",
     });
