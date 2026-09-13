@@ -60,6 +60,9 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [aiResult, setAiResult] = useState(null);
+  const [pipelineStep, setPipelineStep] = useState(0); // 0=idle, 1=upload, 2=parsing, 3=pose, 4=mask, 5=done
+  const [intermediates, setIntermediates] = useState(null); // Pipeline B intermediate images
+  const [activeTab, setActiveTab] = useState('result'); // result | parsing | pose | mask
   const [searchQuery, setSearchQuery] = useState('');
 
   // Review Form State
@@ -136,6 +139,16 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
     }
   };
 
+  // Pipeline step labels for UI
+  const PIPELINE_STEPS = [
+    { step: 0, label: 'Idle' },
+    { step: 1, label: 'Uploading portrait to cloud...' },
+    { step: 2, label: 'SCHP Human Parsing — segmenting body regions...' },
+    { step: 3, label: 'Pose Estimation — mapping body orientation...' },
+    { step: 4, label: 'Generating Agnostic Mask + Pose Map...' },
+    { step: 5, label: 'Pipeline complete!' },
+  ];
+
   // ⚡ PIPELINE B: USER TRY-ON SUBMISSION
   const handleTryOnSubmit = async () => {
     if (!selectedFile) return alert('Please upload a portrait photo first.');
@@ -143,6 +156,9 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
 
     setLoading(true);
     setAiResult(null);
+    setIntermediates(null);
+    setActiveTab('result');
+    setPipelineStep(1);
     setStatusMessage("Uploading portrait & preparing garment...");
 
     try {
@@ -161,7 +177,17 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
       }
       formData.append('userId', 'guest_user');
 
-      setStatusMessage("AI Server synthesizing virtual try-on...");
+      // Simulate pipeline step progression for UX feedback
+      const stepTimer = setInterval(() => {
+        setPipelineStep((prev) => {
+          if (prev < 4) {
+            const next = prev + 1;
+            setStatusMessage(PIPELINE_STEPS[next]?.label || 'Processing...');
+            return next;
+          }
+          return prev;
+        });
+      }, 3500);
 
       const response = await axios.post(
         'http://localhost:8000/api/ai/process-tryon',
@@ -173,10 +199,21 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
         }
       );
 
+      clearInterval(stepTimer);
+      setPipelineStep(5);
+
       if (response.data?.success) {
-        setStatusMessage("Try-On complete!");
+        setStatusMessage("Pipeline complete!");
         const outputUrl = response.data.result_url || response.data.tryOnImage;
         setAiResult({ renderOutput2D: outputUrl });
+
+        // Store intermediate Pipeline B outputs
+        setIntermediates({
+          humanParsing: response.data.human_parsing_url || null,
+          poseMap: response.data.pose_map_url || null,
+          agnosticMask: response.data.agnostic_mask_url || null,
+          agnosticImage: response.data.agnostic_image_url || null,
+        });
       } else {
         alert(response.data?.message || 'AI execution error.');
       }
@@ -185,6 +222,7 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
       alert(error.response?.data?.message || 'AI Pipeline error or connection timeout.');
     } finally {
       setLoading(false);
+      setPipelineStep(0);
       setStatusMessage("");
     }
   };
@@ -380,16 +418,29 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
 
             <div className="flex-1 w-full border border-neutral-800 bg-neutral-950 rounded-xl p-2 flex flex-col items-center justify-center min-h-[260px] relative overflow-hidden shadow-inner">
               {loading ? (
-                <div className="text-center p-6 space-y-3">
+                <div className="text-center p-6 space-y-4 w-full">
                   <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-[#C19A6B]/30 flex items-center justify-center mx-auto text-[#C19A6B]">
                     <Loader2 size={24} className="animate-spin" />
                   </div>
                   <p className="text-xs font-mono text-[#C19A6B] tracking-wide font-semibold">
                     {statusMessage || "AI Processing..."}
                   </p>
-                  <p className="text-[11px] text-neutral-500 max-w-[220px] mx-auto leading-relaxed">
-                    Executing neural segmentation and fitting pipeline...
-                  </p>
+                  {/* Pipeline Step Progress */}
+                  <div className="w-full max-w-[240px] mx-auto space-y-2">
+                    {[1, 2, 3, 4].map((s) => (
+                      <div key={s} className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full shrink-0 transition-all duration-500 ${
+                          pipelineStep > s ? 'bg-green-500' : pipelineStep === s ? 'bg-[#C19A6B] animate-pulse' : 'bg-neutral-700'
+                        }`} />
+                        <span className={`text-[10px] font-mono transition-all duration-300 ${
+                          pipelineStep >= s ? 'text-neutral-300' : 'text-neutral-600'
+                        }`}>
+                          {['Upload Photo', 'Human Parsing (SCHP)', 'Pose Estimation', 'Agnostic Mask'][s - 1]}
+                        </span>
+                        {pipelineStep > s && <Check size={10} className="text-green-500 shrink-0" />}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : aiResult ? (
                 <div className="w-full h-full rounded-lg overflow-hidden flex items-center justify-center">
@@ -410,6 +461,50 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
                 </div>
               )}
             </div>
+
+            {/* ── PIPELINE B INTERMEDIATE RESULTS TABS ──────── */}
+            {intermediates && aiResult && (
+              <div className="mt-4 space-y-3">
+                <div className="flex gap-1.5 flex-wrap">
+                  {[
+                    { key: 'result', label: 'Result' },
+                    { key: 'parsing', label: 'Parsing' },
+                    { key: 'pose', label: 'Pose Map' },
+                    { key: 'mask', label: 'Mask' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setActiveTab(tab.key)}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                        activeTab === tab.key
+                          ? 'bg-[#C19A6B] text-black font-bold'
+                          : 'bg-neutral-900 text-neutral-500 border border-neutral-800 hover:border-neutral-700'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="w-full aspect-[3/4] bg-neutral-950 border border-neutral-800 rounded-xl overflow-hidden">
+                  <img
+                    src={
+                      activeTab === 'result' ? aiResult.renderOutput2D :
+                      activeTab === 'parsing' ? intermediates.humanParsing :
+                      activeTab === 'pose' ? intermediates.poseMap :
+                      intermediates.agnosticMask
+                    }
+                    alt={`Pipeline B — ${activeTab}`}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <p className="text-[10px] text-neutral-600 font-mono text-center">
+                  {activeTab === 'result' && 'Agnostic Image — clothing region removed'}
+                  {activeTab === 'parsing' && 'SCHP Human Parsing — body segmentation map'}
+                  {activeTab === 'pose' && 'Pose Estimation — skeleton keypoints overlay'}
+                  {activeTab === 'mask' && 'Agnostic Mask — garment placement zone (white)'}
+                </p>
+              </div>
+            )}
           </div>
 
           <button
