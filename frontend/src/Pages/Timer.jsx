@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import home1 from "../assets/Videos/timer2.mp4";
+
 
 function Timer() {
   const initialTime = 7 * 60 * 60; // 7 hours in seconds
@@ -65,10 +65,10 @@ function Timer() {
           loop
           muted
           playsInline
+          preload="metadata"
           className="w-full h-full object-cover opacity-90"
         >
-          <source src={home1} type="video/mp4" />
-          Your browser does not support the video tag.
+          <source src="/videos/timer2.mp4" type="video/mp4" />
         </video>
         {/* Very light gradient tint so text remains readable without hiding the video */}
         <div className="absolute inset-0 bg-gradient-to-r from-neutral-950/80 via-neutral-950/40 to-transparent" />

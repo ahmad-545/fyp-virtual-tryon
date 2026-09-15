@@ -1,20 +1,19 @@
 import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { AdminDataContext } from '../context/AdminContext'; // Aapka Admin Context
-import { AuthDataContext } from '../../context/AuthContext'; // Aapka Auth Context
-import { ShieldCheck, Lock, Mail, Loader2 } from 'lucide-react';
+import { AdminDataContext } from '../context/AdminContext';
+import { AuthDataContext } from '../../context/AuthContext';
+import { ShieldCheck, Lock, Mail, Loader2, Eye, EyeOff } from 'lucide-react';
+
 
 const AdminLogin = () => {
-  const { serverUrl } = useContext(AuthDataContext); // AuthContext se URL
-  const { getAdmin, setAdminData } = useContext(AdminDataContext); // AdminContext se functions
+  const { serverUrl } = useContext(AuthDataContext);
+  const { getAdmin, setAdminData } = useContext(AdminDataContext);
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -24,121 +23,387 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      console.log("LOGIN DATA:", formData);
-      console.log("SERVER URL:", serverUrl);
-      // API Request
       const res = await axios.post(
         `${serverUrl}/api/admin/login`,
         formData,
         { withCredentials: true }
       );
-
       if (res.data.token) {
-        localStorage.setItem("adminToken", res.data.token);
-        setAdminData(res.data.admin); // Context update
-        getAdmin(); // Admin data refresh
-        alert("Login Successful!");
+        localStorage.setItem('adminToken', res.data.token);
+        setAdminData(res.data.admin);
+        getAdmin();
         navigate('/admin');
       }
     } catch (error) {
-      console.error("Login Error:", error);
-      alert(error.response?.data?.message || "Invalid Credentials!");
+      alert(error.response?.data?.message || 'Invalid Credentials!');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white px-4 sm:px-6 relative overflow-hidden">
-      
-      {/* Background Decorative Glow Effects */}
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-[#C19A6B]/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-[#C19A6B]/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div style={styles.wrapper}>
 
-      {/* Main Card Container */}
-      <div className="w-full max-w-md bg-gray-900/80 backdrop-blur-xl p-8 sm:p-10 rounded-3xl shadow-2xl border border-gray-800 relative z-10">
-        
-        {/* Top Logo / Icon Header */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-[#C19A6B]/20 border border-[#C19A6B]/30 flex items-center justify-center text-[#C19A6B] mb-3 shadow-inner">
-            <ShieldCheck size={28} />
+      {/* ─── LEFT PANEL: Form ─── */}
+      <div style={styles.leftPanel}>
+
+        {/* Logo */}
+        <div style={styles.logoRow}>
+          <div style={styles.logoIcon}>
+            <ShieldCheck size={22} color="#C19A6B" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-serif font-extrabold text-white tracking-wide uppercase">Trylo Admin</h2>
-          <p className="text-xs sm:text-sm text-gray-400 mt-1 font-light tracking-wide text-center">
-            Secure management portal for store administrators
+          <span style={styles.logoText}>Trylo Admin</span>
+        </div>
+
+        {/* Heading */}
+        <div style={styles.headingBlock}>
+          <h1 style={styles.heading}>Welcome back</h1>
+          <p style={styles.subheading}>
+            Sign in to access your secure management portal.
           </p>
         </div>
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          
-          {/* Email Field */}
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2">
-              Email Address
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={styles.form}>
+
+          {/* Email */}
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>
+              Email <span style={styles.required}>*</span>
             </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">
-                <Mail size={18} />
-              </span>
+            <div style={styles.inputWrap}>
+              <Mail size={16} color="#9ca3af" style={styles.inputIcon} />
               <input
+                id="admin-email"
                 name="email"
                 type="email"
                 placeholder="admin@trylo.store"
                 onChange={handleChange}
                 required
-                className="w-full pl-11 pr-4 py-3 bg-gray-950/60 border border-gray-800 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#C19A6B] focus:ring-1 focus:ring-[#C19A6B] transition duration-200"
+                style={styles.input}
+                onFocus={e => (e.target.style.borderColor = '#C19A6B')}
+                onBlur={e => (e.target.style.borderColor = '#e5e7eb')}
               />
             </div>
           </div>
 
-          {/* Password Field */}
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2">
-              Password
+          {/* Password */}
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>
+              Password <span style={styles.required}>*</span>
             </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">
-                <Lock size={18} />
-              </span>
+            <div style={styles.inputWrap}>
+              <Lock size={16} color="#9ca3af" style={styles.inputIcon} />
               <input
+                id="admin-password"
                 name="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••••••"
                 onChange={handleChange}
                 required
-                className="w-full pl-11 pr-4 py-3 bg-gray-950/60 border border-gray-800 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#C19A6B] focus:ring-1 focus:ring-[#C19A6B] transition duration-200"
+                style={{ ...styles.input, paddingRight: '44px' }}
+                onFocus={e => (e.target.style.borderColor = '#C19A6B')}
+                onBlur={e => (e.target.style.borderColor = '#e5e7eb')}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={styles.eyeBtn}
+              >
+                {showPassword
+                  ? <EyeOff size={16} color="#9ca3af" />
+                  : <Eye size={16} color="#9ca3af" />}
+              </button>
             </div>
           </div>
 
-          {/* Submit Button */}
+          {/* Submit */}
           <button
+            id="admin-login-btn"
             type="submit"
             disabled={loading}
-            className="w-full mt-2 bg-[#C19A6B] hover:bg-[#b0885c] text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-300 shadow-lg shadow-[#C19A6B]/20 flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider text-xs"
+            style={styles.submitBtn}
+            onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#b08456'; }}
+            onMouseLeave={e => { if (!loading) e.currentTarget.style.backgroundColor = '#C19A6B'; }}
           >
             {loading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                <span>Authenticating...</span>
-              </>
+              <span style={styles.loadingRow}>
+                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                Authenticating...
+              </span>
             ) : (
-              <span>Access Dashboard</span>
+              'Sign in'
             )}
           </button>
         </form>
 
-        {/* Footer Note */}
-        <div className="mt-8 text-center border-t border-gray-800/80 pt-4">
-          <p className="text-[11px] text-gray-500 tracking-wider uppercase font-medium">
-            Protected Admin Environment &bull; Trylo Store
-          </p>
-        </div>
-
+        {/* Footer */}
+        <p style={styles.footer}>© 2026 Trylo · Protected Admin Environment</p>
       </div>
+
+      {/* ─── RIGHT PANEL: Video ─── */}
+      <div style={styles.rightPanel}>
+        {/* Gradient overlay so text is readable */}
+        <div style={styles.videoOverlay} />
+
+        {/* Autoplay background video */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          style={styles.video}
+        >
+          <source src="/videos/video1.mp4" type="video/mp4" />
+        </video>
+
+        {/* Content on top of video */}
+        <div style={styles.videoContent}>
+          <p style={styles.videoTag}>SECURE · POWERFUL · ELEGANT</p>
+          <h2 style={styles.videoHeading}>
+            {'Manage your store,\nyour way.'}
+          </h2>
+          <p style={styles.videoDesc}>
+            Full control over products, orders, customers,
+            and analytics — all in one place.
+          </p>
+
+          <div style={styles.featureList}>
+            {[
+              'Real-time order tracking',
+              'Inventory & product management',
+              'Customer insights & analytics',
+            ].map((feat, i) => (
+              <div key={i} style={styles.featureItem}>
+                <span style={styles.featureDot} />
+                <span style={styles.featureText}>{feat}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };
 
-export default AdminLogin;
+/* ─── Inline Styles ─── */
+const styles = {
+  /* Wrapper */
+  wrapper: {
+    display: 'flex',
+    minHeight: '100vh',
+    fontFamily: "'Inter', 'Segoe UI', sans-serif",
+    backgroundColor: '#ffffff',
+  },
+
+  /* ── Left ── */
+  leftPanel: {
+    width: '460px',
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    padding: '48px 52px',
+    backgroundColor: '#ffffff',
+    position: 'relative',
+    zIndex: 10,
+  },
+  logoRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    marginBottom: '44px',
+  },
+  logoIcon: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    backgroundColor: '#fdf4eb',
+    border: '1px solid #f0e0c8',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoText: {
+    fontSize: '18px',
+    fontWeight: '700',
+    color: '#111827',
+    letterSpacing: '-0.3px',
+  },
+  headingBlock: {
+    marginBottom: '32px',
+  },
+  heading: {
+    fontSize: '30px',
+    fontWeight: '700',
+    color: '#111827',
+    margin: '0 0 8px 0',
+    letterSpacing: '-0.5px',
+  },
+  subheading: {
+    fontSize: '14px',
+    color: '#6b7280',
+    margin: 0,
+    lineHeight: 1.6,
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+  },
+  fieldGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  label: {
+    fontSize: '13px',
+    fontWeight: '500',
+    color: '#374151',
+  },
+  required: { color: '#ef4444' },
+  inputWrap: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  inputIcon: {
+    position: 'absolute',
+    left: '14px',
+    pointerEvents: 'none',
+  },
+  input: {
+    width: '100%',
+    padding: '12px 14px 12px 40px',
+    border: '1.5px solid #e5e7eb',
+    borderRadius: '10px',
+    fontSize: '14px',
+    color: '#111827',
+    backgroundColor: '#f9fafb',
+    outline: 'none',
+    transition: 'border-color 0.2s',
+    boxSizing: 'border-box',
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: '14px',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '4px',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  submitBtn: {
+    width: '100%',
+    padding: '13px',
+    backgroundColor: '#C19A6B',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '10px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+    marginTop: '4px',
+  },
+  loadingRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+  },
+  footer: {
+    marginTop: '36px',
+    fontSize: '12px',
+    color: '#9ca3af',
+    textAlign: 'center',
+  },
+
+  /* ── Right ── */
+  rightPanel: {
+    flex: 1,
+    position: 'relative',
+    overflow: 'hidden',
+    backgroundColor: '#000',
+  },
+  video: {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
+  videoOverlay: {
+    position: 'absolute',
+    inset: 0,
+    background: 'linear-gradient(to top, rgba(0,0,0,0.70) 0%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.05) 100%)',
+    zIndex: 1,
+  },
+  videoContent: {
+    position: 'relative',
+    zIndex: 2,
+    padding: '60px 52px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
+    height: '100%',
+    boxSizing: 'border-box',
+  },
+  videoTag: {
+    fontSize: '11px',
+    letterSpacing: '0.25em',
+    color: 'rgba(255,255,255,0.60)',
+    fontWeight: '600',
+    marginBottom: '14px',
+    fontFamily: 'monospace',
+  },
+  videoHeading: {
+    fontSize: '40px',
+    fontWeight: '700',
+    color: '#ffffff',
+    lineHeight: 1.2,
+    margin: '0 0 16px 0',
+    whiteSpace: 'pre-line',
+    letterSpacing: '-0.5px',
+  },
+  videoDesc: {
+    fontSize: '15px',
+    color: 'rgba(255,255,255,0.72)',
+    lineHeight: 1.7,
+    margin: '0 0 32px 0',
+    maxWidth: '400px',
+  },
+  featureList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '14px',
+  },
+  featureItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+  },
+  featureDot: {
+    width: '30px',
+    height: '30px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    border: '1px solid rgba(255,255,255,0.25)',
+    flexShrink: 0,
+  },
+  featureText: {
+    fontSize: '14px',
+    color: 'rgba(255,255,255,0.82)',
+  },
+};
+
+export default AdminLogin;

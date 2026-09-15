@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import tryOnVideo from '../assets/Videos/tryon.mp4'; 
+
 
 const VirtualTryOnPromo = () => {
   return (
@@ -15,14 +15,15 @@ const VirtualTryOnPromo = () => {
 
         {/* Cinematic Background Video: Scaled up and positioned right via object-right */}
         <video
-          src={tryOnVideo} 
           autoPlay
           loop
           muted
           playsInline
-          poster="/assets/images/western_fallback.jpg" 
+          preload="none"
           className="w-full h-full object-cover scale-100 object-right lg:object-right transition-all duration-1000 ease-out"
-        />
+        >
+          <source src="/videos/tryon.mp4" type="video/mp4" />
+        </video>
       </div>
 
       {/* 2️⃣ FOREGROUND LAYER: CRISP GLOWING CONTENT OVERLAY */}

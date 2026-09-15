@@ -10,7 +10,9 @@ import "swiper/css/effect-fade";
 
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import slider2 from "../assets/slider 2.png";
+import home1 from "../assets/slider 2.png";
+
+
 import FashionCategories from "./Categories";
 import VirtualTryOnPromo from "./VirtualTryOnPromo";
 import Trending from "./Trending";
@@ -20,41 +22,43 @@ import WhyTrylo from "./WhyTrylo";
 import Testimonials from "./Testimonials";
 import Newsletter from "./Newsletter";
 import TrustBadges from "./TrustBadges";
-import home1 from "../assets/Videos/home 1.mp4";
-import home2 from "../assets/Videos/home 2.mp4";
-import home3 from "../assets/Videos/home 3.mp4";
-import home4 from "../assets/Videos/home 4.mp4";
 
-
+// Videos served from /public/videos/ (no bundling, instant URL)
+const VIDEO_1 = "/videos/home1.mp4";
+const VIDEO_2 = "/videos/home2.mp4";
+const VIDEO_4 = "/videos/home4.mp4";
 
 function Home() {
   const slides = [
-    { 
-      id: 1, 
-      tag: "Premium AI Fitting", 
-      title: "The Smart Way\nTo Dress Better", 
-      subtitle: "Experience the virtual trial revolution live.", 
-      btnText: "Explore Studio", 
-      link: "/virtual-room", 
-      video: home1 
+    {
+      id: 1,
+      tag: "Premium AI Fitting",
+      title: "The Smart Way\nTo Dress Better",
+      subtitle: "Experience the virtual trial revolution live.",
+      btnText: "Explore Studio",
+      link: "/virtual-room",
+      video: VIDEO_1,
+      preload: "metadata",   // first slide: load metadata so video starts fast
     },
-    { 
-      id: 2, 
-      tag: "Summer Collections 2026", 
-      title: "Minimal Design\nMaximum Vibe", 
-      subtitle: "Bespoke lightweight wear with up to 50% seasonal discount.", 
-      btnText: "Shop Collection", 
-      link: "/shop", 
-      video: home4
+    {
+      id: 2,
+      tag: "Summer Collections 2026",
+      title: "Minimal Design\nMaximum Vibe",
+      subtitle: "Bespoke lightweight wear with up to 50% seasonal discount.",
+      btnText: "Shop Collection",
+      link: "/shop",
+      video: VIDEO_4,
+      preload: "none",
     },
-    { 
-      id: 3, 
-      tag: "Exclusive Fabrics Line", 
-      title: "From Raw Bolt\nTo Finished Masterpiece", 
-      subtitle: "Crafted details engineered for absolute comfort.", 
-      btnText: "View Products", 
-      link: "/shop", 
-      video: home2
+    {
+      id: 3,
+      tag: "Exclusive Fabrics Line",
+      title: "From Raw Bolt\nTo Finished Masterpiece",
+      subtitle: "Crafted details engineered for absolute comfort.",
+      btnText: "View Products",
+      link: "/shop",
+      video: VIDEO_2,
+      preload: "none",
     },
   ];
 
@@ -64,10 +68,10 @@ function Home() {
         <Swiper
           modules={[Autoplay, Pagination, Navigation, EffectFade]}
           autoplay={{ delay: 4000, disableOnInteraction: false }}
-          pagination={{ 
-              clickable: true, 
-              bulletClass: 'swiper-pagination-bullet !w-2.5 !h-2.5 !bg-neutral-300',
-              bulletActiveClass: '!bg-[#C19A6B] !scale-125 !w-6'
+          pagination={{
+            clickable: true,
+            bulletClass: 'swiper-pagination-bullet !w-2.5 !h-2.5 !bg-neutral-300',
+            bulletActiveClass: '!bg-[#C19A6B] !scale-125 !w-6'
           }}
           navigation={{ nextEl: '.custom-next', prevEl: '.custom-prev' }}
           loop={true}
@@ -77,7 +81,7 @@ function Home() {
           {slides.map((slide) => (
             <SwiperSlide key={slide.id}>
               <section className="relative w-full h-full bg-neutral-100 flex items-center pt-20">
-                
+
                 {/* Check if slide has a video or image */}
                 {slide.video ? (
                   <video
@@ -85,15 +89,15 @@ function Home() {
                     loop
                     muted
                     playsInline
+                    preload={slide.preload}
                     className="absolute inset-0 w-full h-full object-cover z-0"
                   >
                     <source src={slide.video} type="video/mp4" />
-                    Your browser does not support the video tag.
                   </video>
                 ) : (
-                  <div 
-                    className="absolute inset-0 bg-cover bg-center z-0" 
-                    style={{ backgroundImage: `url(${slide.image})` }} 
+                  <div
+                    className="absolute inset-0 bg-cover bg-center z-0"
+                    style={{ backgroundImage: `url(${slide.image})` }}
                   />
                 )}
 

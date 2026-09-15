@@ -220,11 +220,11 @@ export const listProduct = async (req, res) => {
 
     const filterQuery = {};
 
-    if (category) filterQuery.category = category;
-    if (subcategory) filterQuery.subcategory = subcategory;
-    if (styleType) filterQuery.styleType = styleType;
-    if (productType) filterQuery.productType = productType;
-    if (status) filterQuery.status = status;
+    if (category) filterQuery.category = { $regex: new RegExp(`^${category}$`, "i") };
+    if (subcategory) filterQuery.subcategory = { $regex: new RegExp(subcategory, "i") };
+    if (styleType) filterQuery.styleType = { $regex: new RegExp(`^${styleType}$`, "i") };
+    if (productType) filterQuery.productType = { $regex: new RegExp(`^${productType}$`, "i") };
+    if (status) filterQuery.status = { $regex: new RegExp(`^${status}$`, "i") };
 
     if (search) {
       filterQuery.$or = [
