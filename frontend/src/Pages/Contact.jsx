@@ -43,7 +43,7 @@ function Contact() {
         
         {/* Header Section */}
         <div className="mb-12 md:mb-20 text-center">
-          <h2 className="text-2xl md:text-4xl font-serif text-neutral-950 uppercase tracking-widest">Contact Support</h2>
+          <h1 className="text-3xl md:text-5xl font-serif font-medium text-neutral-950 uppercase tracking-tight">Contact Support</h1>
           <div className="w-16 h-[2px] bg-[#C19A6B] mt-4 md:mt-6 mx-auto"></div>
           <p className="text-neutral-500 text-sm mt-4 max-w-md mx-auto">
             Have questions about your order or our virtual try-on features? Reach out to us anytime.

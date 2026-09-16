@@ -19,6 +19,7 @@ import OrderConfirmation from './Pages/OrderConfirmation.jsx';
 import Footer from './components/Footer.jsx';
 import Chatbot from './components/Chatbot.jsx';
 import ScrollToTop from './ScrollToTop.jsx';
+import ScrollToTopButton from './components/ScrollToTopButton.jsx';
 import TryOnModel from './Pages/TryOnModel.jsx';
 import AboutUS from './Pages/AboutUS.jsx';
 import FAQs from './Pages/FAQs.jsx';
@@ -65,6 +66,7 @@ function App() {
                 </main>
                 <Footer />
                 <Chatbot />
+                <ScrollToTopButton />
               </div>
             }
           />

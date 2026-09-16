@@ -14,7 +14,7 @@ function AboutUS() {
           <span className="text-[11px] font-mono font-bold uppercase tracking-[0.3em] text-[#C19A6B] block">
             // Welcome To TryLo
           </span>
-          <h1 className="text-4xl sm:text-6xl font-serif font-extrabold tracking-tight text-neutral-950 uppercase mb-6 leading-[1.1]">
+          <h1 className="text-4xl sm:text-6xl font-serif font-medium tracking-tight text-neutral-950 uppercase mb-6 leading-[1.1]">
             Fashion Meets <br/>
             <span className="italic font-light text-neutral-600">Smart Technology.</span>
           </h1>
@@ -35,7 +35,7 @@ function AboutUS() {
               <span className="text-[11px] font-mono font-bold uppercase tracking-[0.3em] text-[#C19A6B] flex items-center gap-2">
                 <Cpu size={16} /> AI Virtual Try-On
               </span>
-              <h2 className="text-3xl sm:text-5xl font-serif font-extrabold tracking-tight text-white uppercase leading-tight">
+              <h2 className="text-3xl sm:text-5xl font-serif font-medium tracking-tight text-white uppercase leading-tight">
                 Check the fit <br/>
                 <span className="italic font-light text-neutral-400">before you buy.</span>
               </h2>

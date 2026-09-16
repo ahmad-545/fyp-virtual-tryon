@@ -74,7 +74,7 @@ function FAQs() {
       
       {/* 1. HERO HEADER */}
       <div className="bg-white border-b border-neutral-200/60 py-16 sm:py-24 px-6 text-center">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold tracking-tight text-neutral-950 uppercase">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-medium tracking-tight text-neutral-950 uppercase">
           Help Center
         </h1>
         <p className="mt-4 text-sm sm:text-base text-neutral-500 max-w-lg mx-auto font-light leading-relaxed">

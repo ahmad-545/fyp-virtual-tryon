@@ -321,7 +321,7 @@ export default function ProductDetail() {
             {product.category} {product.styleType ? `| ${product.styleType}` : ""}
           </span>
 
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-extrabold text-gray-900 mb-4 tracking-tight uppercase break-words">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-medium text-gray-900 mb-4 tracking-tight uppercase break-words">
             {product.name}
           </h1>
 

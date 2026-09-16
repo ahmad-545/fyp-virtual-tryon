@@ -31,7 +31,7 @@ function OrderConfirmation() {
             <CheckCircle size={40} />
           </div>
           <span className="text-[11px] text-[#C19A6B] font-bold tracking-[3px] uppercase block">Order Authenticated Successfully</span>
-          <h1 className="text-3xl sm:text-4xl font-serif font-extrabold text-gray-900 tracking-tight uppercase">
+          <h1 className="text-3xl sm:text-4xl font-serif font-medium text-gray-900 tracking-tight uppercase">
             Thank you for your order!
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 max-w-lg mx-auto leading-relaxed font-light">

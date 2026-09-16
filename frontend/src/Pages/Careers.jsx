@@ -11,7 +11,7 @@ function Careers() {
           <span className="text-[11px] font-mono font-bold uppercase tracking-[0.3em] text-[#C19A6B] bg-neutral-100 px-4 py-2 rounded-xl inline-block border border-neutral-200/80">
             // Work With TryLo
           </span>
-          <h1 className="text-4xl sm:text-6xl font-serif font-extrabold tracking-tight text-neutral-950 uppercase leading-[1.1]">
+          <h1 className="text-4xl sm:text-6xl font-serif font-medium tracking-tight text-neutral-950 uppercase leading-[1.1]">
             Shape the Future of <br />
             <span className="italic font-light text-neutral-600">AI Fashion & Retail</span>
           </h1>

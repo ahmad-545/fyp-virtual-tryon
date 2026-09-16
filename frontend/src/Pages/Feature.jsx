@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { AiOutlineShoppingCart, AiOutlineCamera, AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
 import { useDispatch } from "react-redux";
 import { addToCart, openCart } from "../redux/cartSlice.js";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
 function Feature() {
   const [products, setProducts] = useState([]);
@@ -52,24 +53,52 @@ function Feature() {
   };
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-12 bg-white overflow-hidden">
-      {/* Modern Stylish Header Matching Theme */}
-      <div className="text-center mb-16 relative">
-        <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.25em] text-[#C19A6B] block mb-2">
-          Handpicked Selection
-        </span>
-        <h2 className="text-3xl sm:text-4xl font-serif font-extrabold text-gray-900 tracking-tight">
-          Featured <span className="text-[#C19A6B] font-light italic">Products</span>
-        </h2>
-        <div className="flex items-center justify-center gap-2 mt-3">
-          <div className="w-8 h-[1px] bg-[#C19A6B]/40" />
-          <div className="w-2 h-2 rounded-full bg-[#C19A6B]" />
-          <div className="w-8 h-[1px] bg-[#C19A6B]/40" />
+    <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-12 bg-white overflow-hidden">
+      <div className="max-w-7xl mx-auto">
+        {/* Modern Clean Left-Aligned Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10 sm:mb-12 pb-5 border-b border-gray-100">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="w-5 h-[1.5px] bg-[#C19A6B]" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#C19A6B]">
+                Handpicked Selection
+              </span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-medium text-gray-900 tracking-tight">
+              Featured <span className="text-[#C19A6B] font-light">Products</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-500 font-light mt-2 max-w-md">
+              Discover our exclusive range of premium pieces tailored for perfection.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 self-start sm:self-end pb-1">
+            <Link
+              to="/shop?productType=featured"
+              className="group inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-gray-900 hover:text-[#C19A6B] transition-colors"
+            >
+              <span>View All</span>
+              <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1 text-[#C19A6B]" />
+            </Link>
+
+            <div className="hidden sm:flex items-center gap-1.5 pl-3 border-l border-gray-200">
+              <button
+                onClick={slideLeft}
+                aria-label="Previous Slide"
+                className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all cursor-pointer"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={slideRight}
+                aria-label="Next Slide"
+                className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all cursor-pointer"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
         </div>
-        <p className="text-xs sm:text-sm text-gray-500 font-light mt-3 max-w-sm mx-auto tracking-wide">
-          Discover our exclusive range of premium pieces tailored for perfection.
-        </p>
-      </div>
 
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-10">
@@ -98,7 +127,11 @@ function Feature() {
           </button>
 
           {/* Slider Container with exactly 4 cards per view setup */}
-          <div ref={sliderRef} className="flex gap-6 overflow-x-auto scroll-smooth scrollbar-hide py-4">
+          <div 
+            ref={sliderRef} 
+            className="flex gap-6 overflow-x-auto scroll-smooth scrollbar-hide py-4 [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
             {products.map((item) => {
               const imageUrl = item.images?.[0]?.url || item.images?.[0] || "https://placehold.co/600x800?text=No+Image";
               const secondImageUrl = item.images?.[1]?.url || item.images?.[1] || imageUrl;
@@ -212,6 +245,7 @@ function Feature() {
           <p className="text-gray-500 text-sm font-medium">No featured products found</p>
         </div>
       )}
+      </div>
     </section>
   );
 }

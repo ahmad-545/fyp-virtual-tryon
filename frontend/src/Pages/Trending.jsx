@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { AiOutlineShoppingCart, AiOutlineCamera } from "react-icons/ai";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { addToCart, openCart } from "../redux/cartSlice.js";
 
@@ -48,24 +49,33 @@ export default function Trending() {
   };
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-12 bg-white">
-      {/* Modern Stylish Header Matching Theme */}
-      <div className="text-center mb-16 relative">
-        <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.25em] text-[#C19A6B] block mb-2">
-          This Season's Highlights
-        </span>
-        <h2 className="text-3xl sm:text-4xl font-serif font-extrabold text-gray-900 tracking-tight">
-          Trending <span className="text-[#C19A6B] font-light italic">Products</span>
-        </h2>
-        <div className="flex items-center justify-center gap-2 mt-3">
-          <div className="w-8 h-[1px] bg-[#C19A6B]/40" />
-          <div className="w-2 h-2 rounded-full bg-[#C19A6B]" />
-          <div className="w-8 h-[1px] bg-[#C19A6B]/40" />
+    <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-12 bg-white">
+      <div className="max-w-7xl mx-auto">
+        {/* Modern Clean Left-Aligned Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10 sm:mb-12 pb-5 border-b border-gray-100">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="w-5 h-[1.5px] bg-[#C19A6B]" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#C19A6B]">
+                This Season's Highlights
+              </span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-medium text-gray-900 tracking-tight">
+              Trending <span className="text-[#C19A6B] font-light">Products</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-500 font-light mt-2 max-w-md">
+              Explore our most-coveted styles, handpicked to elevate your everyday wardrobe.
+            </p>
+          </div>
+
+          <Link
+            to="/shop?productType=trending"
+            className="group inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-gray-900 hover:text-[#C19A6B] transition-colors self-start sm:self-end pb-1"
+          >
+            <span>View All</span>
+            <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1 text-[#C19A6B]" />
+          </Link>
         </div>
-        <p className="text-xs sm:text-sm text-gray-500 font-light mt-3 max-w-sm mx-auto tracking-wide">
-          Explore our most-coveted styles, handpicked to elevate your everyday wardrobe.
-        </p>
-      </div>
 
       {/* Loading Skeleton */}
       {loading ? (
@@ -198,6 +208,7 @@ export default function Trending() {
           <p className="text-gray-500 text-sm font-medium">No trending products available right now.</p>
         </div>
       )}
+      </div>
     </section>
   );
 }

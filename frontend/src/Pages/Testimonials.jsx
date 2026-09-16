@@ -274,21 +274,13 @@ export default function Testimonials() {
       className="py-20 sm:py-24 px-4 sm:px-6 lg:px-12 bg-[#fafafa] overflow-hidden"
     >
       {/* ── HEADER ─────────────────────────────── */}
-      <div className="text-center mb-14 sm:mb-16">
-        <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.25em] text-[#C19A6B] block mb-2.5">
+      <div className="text-center mb-12 sm:mb-14">
+        <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.25em] text-[#C19A6B] block mb-2">
           CUSTOMER STORIES
         </span>
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-normal text-gray-900 tracking-tight">
-          What our customers{" "}
-          <span className="text-[#C19A6B] italic">say</span>
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-medium text-gray-900 tracking-tight">
+          What our customers <span className="text-[#C19A6B] font-light">say</span>
         </h2>
-
-        {/* Decorative line */}
-        <div className="flex items-center justify-center gap-2 mt-3.5">
-          <div className="w-8 h-[1px] bg-[#C19A6B]/40" />
-          <div className="w-2 h-2 rounded-full bg-[#C19A6B]" />
-          <div className="w-8 h-[1px] bg-[#C19A6B]/40" />
-        </div>
 
         {/* Stats Row — only show if reviews exist */}
         {totalReviews && (

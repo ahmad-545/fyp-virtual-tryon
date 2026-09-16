@@ -583,7 +583,7 @@ export default function ProductGrid() {
           {/* Top Bar */}
           <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-100 pb-5">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-serif font-extrabold text-gray-900 tracking-tight capitalize">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-medium text-gray-900 tracking-tight capitalize">
                 {searchQuery
                   ? `Results for "${searchQuery}"`
                   : subcatParam

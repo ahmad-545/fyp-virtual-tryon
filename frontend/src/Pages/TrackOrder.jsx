@@ -187,7 +187,7 @@ export default function TrackOrder() {
             Real-Time Logistics
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-serif font-extrabold tracking-tight uppercase">
+          <h1 className="text-3xl sm:text-5xl font-serif font-medium tracking-tight uppercase">
             Track Your Order
           </h1>
 

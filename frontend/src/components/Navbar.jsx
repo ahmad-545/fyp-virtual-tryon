@@ -161,13 +161,6 @@ function Navbar() {
             isTransparent ? "text-gray-900" : "text-gray-800"
           }`}>
 
-            <Link
-              to="/"
-              className="relative group transition duration-300 hover:text-[#C19A6B]"
-            >
-              HOME
-              <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-[#C19A6B] transition-all duration-300 group-hover:w-full"></span>
-            </Link>
 
             {/* SHOP ALL */}
             <Link
@@ -602,7 +595,6 @@ function Navbar() {
             
             {/* LINK MATRIX */}
             <div className="flex flex-col gap-4 text-black font-medium uppercase text-sm tracking-wide">
-              <Link to="/" onClick={() => setIsOpen(false)} className="hover:text-[#C19A6B] transition">Home</Link>
               
               {/* ⚡ SHOP ALL */}
               <Link to="/shop" onClick={() => setIsOpen(false)} className="hover:text-[#C19A6B] transition">
