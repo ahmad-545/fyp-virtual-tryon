@@ -42,9 +42,43 @@ const tryOnSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    agnosticImageUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    denseposeUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    idmMaskUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    garmentCaption: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    tryOnCategory: {
+      type: String,
+      default: "upper_body",
+      trim: true,
+    },
+    engine: {
+      type: String,
+      default: "agnostic-preview",
+      trim: true,
+    },
+    elapsedSec: {
+      type: Number,
+      default: 0,
+    },
     status: {
       type: String,
-      enum: ["success", "failed", "processing"],
+      enum: ["success", "failed", "processing", "degraded"],
       default: "success",
     },
   },
