@@ -16,6 +16,15 @@ class TryOnRequest(BaseModel):
     product_id: str
     user_photo_url: HttpUrl
     clean_garment_url: HttpUrl
+    product_name: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    subcategory: Optional[str] = None
+    styleType: Optional[str] = None
+    tryon_category: Optional[str] = "upper_body"
+    steps: Optional[int] = 30
+    guidance_scale: Optional[float] = 2.0
+    seed: Optional[int] = -1
 
 class TryOnResponse(BaseModel):
     user_id: str
@@ -28,3 +37,9 @@ class TryOnResponse(BaseModel):
     pose_map_url: Optional[str] = None
     agnostic_mask_url: Optional[str] = None
     agnostic_image_url: Optional[str] = None
+    # IDM-VTON diffusion fields
+    engine: Optional[str] = None
+    densepose_url: Optional[str] = None
+    idm_mask_url: Optional[str] = None
+    garment_caption: Optional[str] = None
+    elapsed_sec: Optional[float] = None
