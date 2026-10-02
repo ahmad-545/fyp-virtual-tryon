@@ -6,22 +6,24 @@ from dotenv import load_dotenv
 import cloudinary
 import cloudinary.uploader
 from models import ProcessGarmentRequest, ProcessGarmentResponse, TryOnRequest, TryOnResponse
+import idm_client
 
 # Load environment variables from .env
 load_dotenv()
+ENABLE_PREVIEW_PIPELINE = os.getenv("ENABLE_PREVIEW_PIPELINE", "true").lower() == "true"
 
-# Cloudinary Configuration
+# Cloudinary Configuration - using environment variables without hardcoded fallbacks
 cloudinary.config(
-    cloud_name=os.getenv("CLOUD_NAME", "dm8mgnwp7"),
-    api_key=os.getenv("CLOUD_API_KEY", "528952989357329"),
-    api_secret=os.getenv("CLOUD_API_SECRET", "ix9UK_hRI_7TRcKL-Fm38NyKmkY"),
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME") or os.getenv("CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY") or os.getenv("CLOUD_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET") or os.getenv("CLOUD_API_SECRET"),
     secure=True,
 )
 
 app = FastAPI(
     title="Virtual Try-On AI Server",
-    description="API for Garment Segmentation (Pipeline A) and Virtual Try-On (Pipeline B)",
-    version="1.0.0",
+    description="API for Garment Segmentation (Pipeline A), Virtual Try-On (Pipeline B), and Kaggle IDM-VTON GPU Worker",
+    version="1.1.0",
 )
 
 app.add_middleware(
@@ -38,14 +40,22 @@ async def root():
         "message": "AI Server is running.",
         "pipeline_a": "Garment Segmentation (Active & Live)",
         "pipeline_b": "Virtual Try-On Synthesis (Active & Live)",
+        "idm_vton_integration": "Enabled",
         "docs": "/docs",
     }
+
+@app.get("/gpu-status")
+def gpu_status():
+    """
+    Check the connection status of the Kaggle GPU worker.
+    """
+    return idm_client.get_gpu_worker_status()
 
 # ===============================================================
 # PIPELINE A: GARMENT SEGMENTATION & CLEAN ASSET GENERATION
 # ===============================================================
 @app.post("/process-garment", response_model=ProcessGarmentResponse)
-async def process_garment(request: ProcessGarmentRequest):
+def process_garment(request: ProcessGarmentRequest):
     """
     ═══════════════════════════════════════════════════════════════
     PIPELINE A — ADD PRODUCT TO CATALOG (Garment Segmentation)
@@ -113,7 +123,7 @@ async def process_garment(request: ProcessGarmentRequest):
 # PIPELINE B: USER VIRTUAL TRY-ON SYNTHESIS
 # ===============================================================
 @app.post("/try-on", response_model=TryOnResponse)
-async def try_on(request: TryOnRequest):
+def try_on(request: TryOnRequest):
     """
     ═══════════════════════════════════════════════════════════════
     PIPELINE B — USER TRY-ON REQUEST
@@ -122,7 +132,8 @@ async def try_on(request: TryOnRequest):
     2. Runs SCHP (Human Parsing) — segments body into regions
     3. Runs Pose Estimation (MediaPipe) — maps body pose/orientation
     4. Generates Agnostic Mask + Pose Map — defines garment target area
-    5. Returns all intermediate results + final composite
+    5. Calls IDM-VTON GPU Worker on Kaggle for high-fidelity diffusion synthesis
+    6. Returns all intermediate results + final composite / diffusion output
     """
     try:
         user_photo_str = str(request.user_photo_url).strip()
@@ -133,48 +144,84 @@ async def try_on(request: TryOnRequest):
         print(f"[PIPELINE B] User Try-On Request [User: {request.user_id} | Product: {request.product_id}]")
         print(f"[PIPELINE B] Session: {session_id}")
         print(f"[PIPELINE B] 1. User photo: {user_photo_str}")
-        print(f"[PIPELINE B] 2. Clean garment (cached from Pipeline A): {clean_garment_str}")
+        print(f"[PIPELINE B] 2. Clean garment: {clean_garment_str}")
 
-        # ── Import AI modules (lazy imports to keep startup fast) ──
-        from human_parsing import download_image, run_human_parsing
-        from pose_estimation import run_pose_estimation
-        from agnostic_gen import generate_all_agnostic_outputs
+        # ── STEPS 1-4: Preview pipeline (SegFormer + MediaPipe) ──
+        # Display-only: fills the Parsing / Pose / Mask tabs in the UI.
+        # Needs torch + numpy locally, so it is skipped when
+        # ENABLE_PREVIEW_PIPELINE=false. The real try-on runs on the GPU
+        # worker, which does its own parsing, mask and DensePose.
+        agnostic_outputs = {
+            "human_parsing_url": None,
+            "pose_map_url": None,
+            "agnostic_mask_url": None,
+            "agnostic_image_url": None,
+        }
 
-        # ── STEP 1: Download user photo ──────────────────────────
-        print("[PIPELINE B] 3. Downloading user photo...")
-        user_image = download_image(user_photo_str)
+        if ENABLE_PREVIEW_PIPELINE:
+            from human_parsing import download_image, run_human_parsing
+            from pose_estimation import run_pose_estimation
+            from agnostic_gen import generate_all_agnostic_outputs
 
-        # ── STEP 2: Human Parsing (SCHP) ─────────────────────────
-        print("[PIPELINE B] 4. Running Human Parsing (SCHP)... [Segmenting body: arms, torso, legs]")
-        parsing_mask_image, label_map = run_human_parsing(user_image)
+            print("[PIPELINE B] 3. Downloading user photo...")
+            user_image = download_image(user_photo_str)
 
-        # ── STEP 3: Pose Estimation (MediaPipe) ──────────────────
-        print("[PIPELINE B] 5. Running Pose Estimation (MediaPipe)... [Mapping body orientation]")
-        pose_map_image, keypoints = run_pose_estimation(user_image)
+            print("[PIPELINE B] 4. Running Human Parsing (SCHP)...")
+            parsing_mask_image, label_map = run_human_parsing(user_image)
 
-        # ── STEP 4: Agnostic Mask + Pose Map Generation ─────────
-        print("[PIPELINE B] 6. Generating Agnostic Mask + Pose Map... [Defining target cloth area]")
-        agnostic_outputs = generate_all_agnostic_outputs(
-            user_image=user_image,
-            label_map=label_map,
-            parsing_mask_image=parsing_mask_image,
-            pose_map_image=pose_map_image,
-            session_id=session_id,
+            print("[PIPELINE B] 5. Running Pose Estimation (MediaPipe)...")
+            pose_map_image, keypoints = run_pose_estimation(user_image)
+
+            print("[PIPELINE B] 6. Generating Agnostic Mask + Pose Map...")
+            agnostic_outputs = generate_all_agnostic_outputs(
+                user_image=user_image,
+                label_map=label_map,
+                parsing_mask_image=parsing_mask_image,
+                pose_map_image=pose_map_image,
+                session_id=session_id,
+            )
+        else:
+            print("[PIPELINE B] 3-6. Preview pipeline disabled, going straight to IDM-VTON")
+        # ── STEP 5: IDM-VTON Diffusion Generation (Kaggle GPU Worker) ──
+        print("[PIPELINE B] 7. Contacting IDM-VTON GPU Worker...")
+        idm_res = idm_client.generate_tryon(
+            user_photo_url=user_photo_str,
+            clean_garment_url=clean_garment_str,
+            garment_caption=None,
+            category=request.tryon_category or "upper_body",
+            steps=request.steps or 30,
+            guidance_scale=request.guidance_scale or 2.0,
+            seed=request.seed if request.seed is not None else -1,
+            product_name=request.product_name,
+            description=request.description,
+            subcategory=request.subcategory,
+            style_type=request.styleType,
+            product_category=request.category,
+           
         )
 
-        # ── STEP 5: Result composition ───────────────────────────
-        # For now: the agnostic image shows where garment WILL go.
-        # When IDM-VTON is integrated (Step 6), it will synthesize the final output.
-        # Current result = agnostic image (demonstrates the pipeline is working)
-        result_url = agnostic_outputs["agnostic_image_url"]
+        if idm_res.get("result_url"):
+            result_url = idm_res["result_url"]
+            engine = idm_res.get("engine", "idm-vton")
+            status_str = "success"
+            msg = "Virtual Try-On completed with IDM-VTON diffusion synthesis"
+        else:
+            result_url = agnostic_outputs.get("agnostic_image_url") or user_photo_str
+            engine = idm_res.get("engine", "agnostic-fallback")
+            status_str = "degraded"
+            msg = "Virtual Try-On completed with Agnostic Preview (GPU worker offline or not configured)"
 
         print(f"\n[PIPELINE B] ═══ PIPELINE RESULTS ═══")
+        print(f"  Engine:         {engine}")
         print(f"  Human Parsing:  {agnostic_outputs['human_parsing_url']}")
         print(f"  Pose Map:       {agnostic_outputs['pose_map_url']}")
         print(f"  Agnostic Mask:  {agnostic_outputs['agnostic_mask_url']}")
         print(f"  Agnostic Image: {agnostic_outputs['agnostic_image_url']}")
+        print(f"  DensePose URL:  {idm_res.get('densepose_url')}")
+        print(f"  IDM Mask URL:   {idm_res.get('idm_mask_url')}")
         print(f"  Result URL:     {result_url}")
-        print(f"  Keypoints:      {len(keypoints)} landmarks detected")
+        print(f"  Elapsed:        {idm_res.get('elapsed_sec')}s")
+        #print(f"  Keypoints:      {len(keypoints)} landmarks detected")
         print(f"[PIPELINE B] [COMPLETE] Session {session_id} finished successfully")
         print("=======================================================\n")
 
@@ -182,12 +229,17 @@ async def try_on(request: TryOnRequest):
             user_id=request.user_id,
             product_id=request.product_id,
             result_url=result_url,
-            status="success",
-            message="Virtual Try-On Pipeline B completed — SCHP + Pose + Agnostic Mask generated",
+            status=status_str,
+            message=msg,
             human_parsing_url=agnostic_outputs["human_parsing_url"],
             pose_map_url=agnostic_outputs["pose_map_url"],
             agnostic_mask_url=agnostic_outputs["agnostic_mask_url"],
             agnostic_image_url=agnostic_outputs["agnostic_image_url"],
+            engine=engine,
+            densepose_url=idm_res.get("densepose_url"),
+            idm_mask_url=idm_res.get("idm_mask_url"),
+            garment_caption=idm_res.get("garment_caption"),
+            elapsed_sec=idm_res.get("elapsed_sec"),
         )
     except Exception as e:
         print(f"[ERROR] Error in try_on: {e}")

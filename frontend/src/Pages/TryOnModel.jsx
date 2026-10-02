@@ -196,6 +196,7 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
+          timeout: 10 * 60 * 1000,
         }
       );
 
@@ -210,9 +211,11 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
         // Store intermediate Pipeline B outputs
         setIntermediates({
           humanParsing: response.data.human_parsing_url || null,
-          poseMap: response.data.pose_map_url || null,
-          agnosticMask: response.data.agnostic_mask_url || null,
+          poseMap: response.data.densepose_url || response.data.pose_map_url || null,
+          agnosticMask: response.data.idm_mask_url || response.data.agnostic_mask_url || null,
           agnosticImage: response.data.agnostic_image_url || null,
+          engine: response.data.engine,
+          elapsed: response.data.elapsed_sec,
         });
       } else {
         alert(response.data?.message || 'AI execution error.');
@@ -435,7 +438,7 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
                         <span className={`text-[10px] font-mono transition-all duration-300 ${
                           pipelineStep >= s ? 'text-neutral-300' : 'text-neutral-600'
                         }`}>
-                          {['Upload Photo', 'Human Parsing (SCHP)', 'Pose Estimation', 'Agnostic Mask'][s - 1]}
+                          {['Upload Photo', 'Human Parsing', 'DensePose + Mask', 'IDM-VTON Diffusion'][s - 1]}
                         </span>
                         {pipelineStep > s && <Check size={10} className="text-green-500 shrink-0" />}
                       </div>
@@ -498,10 +501,14 @@ const TryOnModel = ({ isOpen = true, onClose, product }) => {
                   />
                 </div>
                 <p className="text-[10px] text-neutral-600 font-mono text-center">
-                  {activeTab === 'result' && 'Agnostic Image — clothing region removed'}
-                  {activeTab === 'parsing' && 'SCHP Human Parsing — body segmentation map'}
-                  {activeTab === 'pose' && 'Pose Estimation — skeleton keypoints overlay'}
-                  {activeTab === 'mask' && 'Agnostic Mask — garment placement zone (white)'}
+                  {activeTab === 'result' && (
+                    intermediates?.engine === 'idm-vton'
+                      ? `IDM-VTON synthesis${intermediates.elapsed ? ` — ${intermediates.elapsed}s` : ''}`
+                      : 'GPU worker offline — showing agnostic preview'
+                  )}
+                  {activeTab === 'parsing' && 'Human Parsing — body segmentation map'}
+                  {activeTab === 'pose' && 'DensePose — dense body surface map'}
+                  {activeTab === 'mask' && 'Inpainting Mask — garment placement zone'}
                 </p>
               </div>
             )}

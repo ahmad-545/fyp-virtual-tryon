@@ -5,8 +5,15 @@ frontend/node_modules/
 
 # Environment variables (API keys, passwords)
 .env
+**/.env
+ai_server/.env
 backend/.env
 frontend/.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
 
 # Build files
 dist/
