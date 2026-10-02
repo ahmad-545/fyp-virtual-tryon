@@ -4,6 +4,37 @@ import TryOn from "../models/TryOn.js";
 import uploadoncloudinary from "../config/cloudinary.js";
 
 // ============================================
+// HELPER: Resolve Try-On Category
+// ============================================
+export const resolveTryOnCategory = (category = "", subcategory = "") => {
+  const cat = (category || "").toLowerCase().trim();
+  const sub = (subcategory || "").toLowerCase().trim();
+  const combined = `${cat} ${sub}`;
+
+  // 1. Lower Body check
+  const lowerKeywords = [
+    "pant", "pants", "trouser", "trousers", "jean", "jeans",
+    "short", "shorts", "skirt", "skirts", "bottom", "bottoms",
+    "shalwar", "salwar", "pajama", "pyjama", "tights", "legging", "leggings"
+  ];
+  if (lowerKeywords.some((kw) => combined.includes(kw))) {
+    return "lower_body";
+  }
+
+  // 2. Dresses / Full Body check
+  const dressKeywords = [
+    "dress", "dresses", "maxi", "frock", "gown", "jumpsuit",
+    "abaya", "suit", "anarkali", "romper", "one-piece"
+  ];
+  if (dressKeywords.some((kw) => combined.includes(kw))) {
+    return "dresses";
+  }
+
+  // 3. Default to Upper Body (shirts, tops, jackets, hoodies, kurtas, etc.)
+  return "upper_body";
+};
+
+// ============================================
 // PIPELINE B: USER TRY-ON REQUEST
 // ============================================
 
@@ -45,7 +76,7 @@ export const executeTryOn = async (req, res) => {
       });
     }
 
-    // 2. Fetch Cached Clean Garment from MongoDB
+    // 2. Fetch Cached Clean Garment & Product Details from MongoDB
     let cleanGarmentUrl = clothImageUrl || "";
     let product = null;
 
@@ -60,10 +91,14 @@ export const executeTryOn = async (req, res) => {
           try {
             const aiServerUrl = process.env.AI_SERVER_URL || "http://127.0.0.1:8001";
             console.log(`🤖 Auto-triggering Pipeline A SAM for product ${product.sku}...`);
-            const segRes = await axios.post(`${aiServerUrl}/process-garment`, {
-              product_id: product.sku || product._id.toString(),
-              raw_image_url: cleanGarmentUrl,
-            });
+            const segRes = await axios.post(
+              `${aiServerUrl}/process-garment`,
+              {
+                product_id: product.sku || product._id.toString(),
+                raw_image_url: cleanGarmentUrl,
+              },
+              { timeout: 120000 }
+            );
             if (segRes.data?.clean_garment_url) {
               product.cleanGarmentUrl = segRes.data.clean_garment_url;
               product.isProcessedByAI = true;
@@ -85,17 +120,36 @@ export const executeTryOn = async (req, res) => {
       });
     }
 
-    // 3. Call FastAPI: POST /try-on
+    // Determine try-on category from product
+    const resolvedCategory = resolveTryOnCategory(
+      product?.category || "",
+      product?.subcategory || ""
+    );
+
+    // 3. Call FastAPI: POST /try-on with product details and 10 min timeout
     const aiServerUrl = process.env.AI_SERVER_URL || "http://127.0.0.1:8001";
-    console.log(`🤖 Calling FastAPI ${aiServerUrl}/try-on...`);
+    const timeoutMs = process.env.AI_TIMEOUT_MS ? parseInt(process.env.AI_TIMEOUT_MS, 10) : 600000;
+
+    console.log(`🤖 Calling FastAPI ${aiServerUrl}/try-on (Timeout: ${timeoutMs}ms)...`);
     console.log(`- user_photo_url: ${userPhotoUrl}`);
     console.log(`- clean_garment_url: ${cleanGarmentUrl}`);
+    console.log(`- category: ${resolvedCategory}`);
 
-    const aiRes = await axios.post(`${aiServerUrl}/try-on`, {
+    const aiPayload = {
       user_id: userId,
       product_id: product?.sku || product?._id?.toString() || "custom_product",
       user_photo_url: userPhotoUrl,
       clean_garment_url: cleanGarmentUrl,
+      product_name: product?.name || undefined,
+      description: product?.description || undefined,
+      category: product?.category || undefined,
+      subcategory: product?.subcategory || undefined,
+      styleType: product?.styleType || undefined,
+      tryon_category: resolvedCategory,
+    };
+
+    const aiRes = await axios.post(`${aiServerUrl}/try-on`, aiPayload, {
+      timeout: timeoutMs,
     });
 
     const resultUrl = aiRes.data.result_url;
@@ -103,13 +157,15 @@ export const executeTryOn = async (req, res) => {
     const poseMapUrl = aiRes.data.pose_map_url || null;
     const agnosticMaskUrl = aiRes.data.agnostic_mask_url || null;
     const agnosticImageUrl = aiRes.data.agnostic_image_url || null;
+    const denseposeUrl = aiRes.data.densepose_url || null;
+    const idmMaskUrl = aiRes.data.idm_mask_url || null;
+    const engine = aiRes.data.engine || (aiRes.data.status === "success" ? "idm-vton" : "agnostic-fallback");
+    const elapsedSec = aiRes.data.elapsed_sec || 0;
+    const garmentCaption = aiRes.data.garment_caption || "";
+    const status = aiRes.data.status || (engine === "idm-vton" ? "success" : "degraded");
 
     console.log("🎉 Try-On Generation complete! Result URL:", resultUrl);
-    console.log("📊 Pipeline B Intermediates:");
-    console.log("   Human Parsing:", humanParsingUrl);
-    console.log("   Pose Map:", poseMapUrl);
-    console.log("   Agnostic Mask:", agnosticMaskUrl);
-    console.log("   Agnostic Image:", agnosticImageUrl);
+    console.log(`📊 Engine: ${engine} (${elapsedSec}s) | Status: ${status}`);
 
     // 4. Save Try-On session in MongoDB (linked to user + product)
     let tryOnRecord = null;
@@ -123,7 +179,14 @@ export const executeTryOn = async (req, res) => {
         humanParsingUrl,
         poseMapUrl,
         agnosticMaskUrl,
-        status: "success",
+        agnosticImageUrl,
+        denseposeUrl,
+        idmMaskUrl,
+        garmentCaption,
+        tryOnCategory: resolvedCategory,
+        engine,
+        elapsedSec,
+        status,
       });
     }
 
@@ -138,15 +201,43 @@ export const executeTryOn = async (req, res) => {
       pose_map_url: poseMapUrl,
       agnostic_mask_url: agnosticMaskUrl,
       agnostic_image_url: agnosticImageUrl,
+      densepose_url: denseposeUrl,
+      idm_mask_url: idmMaskUrl,
+      engine,
+      elapsed_sec: elapsedSec,
+      garment_caption: garmentCaption,
+      tryOnCategory: resolvedCategory,
       tryOnId: tryOnRecord?._id || null,
-      message: "Virtual Try-On completed successfully",
+      message: aiRes.data.message || "Virtual Try-On completed successfully",
     });
 
   } catch (error) {
     console.error("❌ EXECUTE TRY-ON ERROR =>", error);
     return res.status(500).json({
       success: false,
-      message: error.response?.data?.detail || error.message || "Virtual Try-On execution failed.",
+      message: error.response?.data?.detail || error.response?.data?.message || error.message || "Virtual Try-On execution failed.",
+    });
+  }
+};
+
+// ============================================
+// GPU STATUS (Kaggle Worker Health Check)
+// ============================================
+
+export const getGpuStatus = async (req, res) => {
+  try {
+    const aiServerUrl = process.env.AI_SERVER_URL || "http://127.0.0.1:8001";
+    const aiRes = await axios.get(`${aiServerUrl}/gpu-status`, { timeout: 10000 });
+    return res.status(200).json({
+      success: true,
+      ...aiRes.data,
+    });
+  } catch (error) {
+    return res.status(200).json({
+      success: false,
+      online: false,
+      status: "offline",
+      message: error.response?.data?.detail || error.message || "Could not connect to AI server",
     });
   }
 };
