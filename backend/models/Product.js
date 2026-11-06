@@ -87,6 +87,12 @@ const productSchema = new mongoose.Schema(
       default: "eastern",
     },
 
+    tryOnCategory: {
+      type: String,
+      enum: ["upper_body", "lower_body", "dresses"],
+      default: "upper_body",
+    },
+
     productType: {
       type: String,
       enum: ["featured", "trending", "normal"],

@@ -46,6 +46,7 @@ export const addProduct = async (req, res) => {
       status,
       sizes,
       isVirtualTryOnEnabled,
+      tryOnCategory,
     } = req.body;
 
     // ==========================
@@ -170,6 +171,7 @@ export const addProduct = async (req, res) => {
       subcategory,
 
       styleType,
+      tryOnCategory: tryOnCategory || "upper_body",
       productType,
       status,
 
@@ -353,6 +355,7 @@ export const updateProduct = async (req, res) => {
       status,
       sizes,
       isVirtualTryOnEnabled,
+      tryOnCategory,
     } = req.body;
 
     // ==========================
@@ -434,6 +437,7 @@ export const updateProduct = async (req, res) => {
     product.category = category || product.category;
     product.subcategory = subcategory || product.subcategory;
     product.styleType = styleType || product.styleType;
+    product.tryOnCategory = tryOnCategory || product.tryOnCategory;
     product.productType = productType || product.productType;
     product.status = status || product.status;
 

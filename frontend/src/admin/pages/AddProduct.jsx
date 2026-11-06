@@ -15,6 +15,7 @@ export default function AddProduct() {
     category: "men",
     subcategory: "",
     styleType: "eastern",
+    tryOnCategory: "upper_body",
     productType: "normal",
     status: "new",
     sizes: [{ size: "S", stock: "" }],
@@ -93,6 +94,7 @@ export default function AddProduct() {
     formData.append("category", product.category);
     formData.append("subcategory", product.subcategory);
     formData.append("styleType", product.styleType);
+    formData.append("tryOnCategory", product.tryOnCategory);
     formData.append("productType", product.productType);
     formData.append("status", product.status);
     formData.append("isVirtualTryOnEnabled", product.isVirtualTryOnEnabled);
@@ -123,6 +125,7 @@ export default function AddProduct() {
           category: "men",
           subcategory: "",
           styleType: "eastern",
+          tryOnCategory: "upper_body",
           productType: "normal",
           status: "new",
           sizes: [{ size: "S", stock: "" }],
@@ -313,6 +316,20 @@ export default function AddProduct() {
                 >
                   <option value="eastern">Eastern</option>
                   <option value="western">Western</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Try-On Category</label>
+                <select
+                  name="tryOnCategory"
+                  value={product.tryOnCategory}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#C19A6B] focus:border-transparent transition bg-white"
+                >
+                  <option value="upper_body">upper_body — Shirts, polos, kurtis, tops</option>
+                  <option value="lower_body">lower_body — Trousers, pants, shalwar, palazzo</option>
+                  <option value="dresses">dresses — Kurta, shalwar kameez, suits, full-body garments</option>
                 </select>
               </div>
 

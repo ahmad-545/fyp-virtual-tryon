@@ -158,6 +158,7 @@ export default function ListProduct() {
       category: product.category || "men",
       subcategory: product.subcategory || "",
       styleType: product.styleType || "eastern",
+      tryOnCategory: product.tryOnCategory || "upper_body",
       productType: product.productType || "normal",
       status: product.status || "new",
       sizes: product.sizes && product.sizes.length > 0 ? product.sizes : [{ size: "S", stock: "" }],
@@ -608,6 +609,14 @@ export default function ListProduct() {
                     <label className="text-xs font-semibold text-gray-600 uppercase">Product Type</label>
                     <select name="productType" value={editForm.productType} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-[#C19A6B] outline-none bg-white">
                       <option value="normal">Normal</option><option value="featured">Featured</option><option value="trending">Trending</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 uppercase">Try-On Category</label>
+                    <select name="tryOnCategory" value={editForm.tryOnCategory} onChange={handleEditChange} className="w-full border rounded-xl p-2.5 mt-1 focus:ring-2 focus:ring-[#C19A6B] outline-none bg-white">
+                      <option value="upper_body">upper_body — Shirts, polos, kurtis, tops</option>
+                      <option value="lower_body">lower_body — Trousers, pants, shalwar, palazzo</option>
+                      <option value="dresses">dresses — Kurta, shalwar kameez, suits, full-body garments</option>
                     </select>
                   </div>
                 </div>
