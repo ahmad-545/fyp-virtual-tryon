@@ -44,10 +44,12 @@ POLL_INTERVAL = 3.0
 
 
 def _worker_url() -> str:
+    load_dotenv(override=True)
     return os.getenv("GPU_WORKER_URL", "").strip().rstrip("/")
 
 
 def _api_key() -> str:
+    load_dotenv(override=True)
     return os.getenv("GPU_WORKER_KEY", DEFAULT_KEY).strip()
 
 

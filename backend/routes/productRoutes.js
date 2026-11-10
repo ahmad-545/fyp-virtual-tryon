@@ -12,6 +12,7 @@ import {
   toggleReviewStatus,
   updateProductInventory,
   getInventorySummary,
+  processGarmentForProduct,
 } from "../controllers/productController.js";
 
 const productRoutes = express.Router();
@@ -43,6 +44,11 @@ productRoutes.get("/", listProduct);
 // UPDATE PRODUCT INVENTORY (QUICK STOCK UPDATE)
 // ============================================
 productRoutes.put("/:id/inventory", updateProductInventory);
+
+// ============================================
+// PIPELINE A: SEGMENT GARMENT / REMOVE BACKGROUND
+// ============================================
+productRoutes.post("/:id/process-garment", processGarmentForProduct);
 
 // ============================================
 // GET SINGLE PRODUCT

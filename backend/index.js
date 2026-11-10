@@ -76,6 +76,7 @@ app.use("/api", chatRouter);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/ai", tryOnRouter);
 app.use("/api/tryon", tryOnRouter);
+app.use("/api/try-on", tryOnRouter);
 
 // Test Route
 app.get("/", (req, res) => {

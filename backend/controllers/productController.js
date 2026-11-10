@@ -776,3 +776,73 @@ export const getInventorySummary = async (req, res) => {
     });
   }
 };
+
+// ============================================
+// K. TRIGGER GARMENT SEGMENTATION (PIPELINE A)
+// ============================================
+
+export const processGarmentForProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found.",
+      });
+    }
+
+    if (!product.images || product.images.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "This product does not have any image to process.",
+      });
+    }
+
+    const rawImageUrl = product.images[0].url;
+    const aiServerUrl = process.env.AI_SERVER_URL || "http://127.0.0.1:8001";
+
+    console.log(`🤖 Triggering Pipeline A manually for product SKU: ${product.sku}...`);
+
+    const aiRes = await axios.post(
+      `${aiServerUrl}/process-garment`,
+      {
+        product_id: product.sku || product._id.toString(),
+        raw_image_url: rawImageUrl,
+      },
+      { timeout: 120000 }
+    );
+
+    if (aiRes.data && aiRes.data.clean_garment_url) {
+      product.cleanGarmentUrl = aiRes.data.clean_garment_url;
+      product.isProcessedByAI = true;
+      product.isVirtualTryOnEnabled = true;
+      await product.save();
+
+      // Real-time broadcast so table updates immediately
+      io.emit("product:updated", { product });
+
+      return res.status(200).json({
+        success: true,
+        message: "Garment background removed and cached successfully!",
+        cleanGarmentUrl: product.cleanGarmentUrl,
+        product,
+      });
+    } else {
+      return res.status(502).json({
+        success: false,
+        message: "AI server did not return a clean garment URL.",
+      });
+    }
+  } catch (error) {
+    console.error("Manual garment segmentation error:", error);
+    return res.status(500).json({
+      success: false,
+      message:
+        error.response?.data?.detail ||
+        error.message ||
+        "Failed to run garment segmentation.",
+    });
+  }
+};

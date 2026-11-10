@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Trash2, Edit, Package, AlertCircle, Filter, X, Plus, ImagePlus, Loader2, Star, TrendingUp, Boxes } from "lucide-react";
+import { Search, Trash2, Edit, Package, AlertCircle, Filter, X, Plus, ImagePlus, Loader2, Star, TrendingUp, Boxes, Sparkles, Eye, ExternalLink } from "lucide-react";
 import socket from "../../utils/socket.js";
 
 export default function ListProduct() {
@@ -16,6 +16,7 @@ export default function ListProduct() {
   const [previews, setPreviews] = useState([null, null, null]);
   const [existingImages, setExistingImages] = useState([]);
   const [processingId, setProcessingId] = useState(null);
+  const [viewingGarment, setViewingGarment] = useState(null);
 
   const handleProcessGarment = async (id) => {
     try {
@@ -27,6 +28,9 @@ export default function ListProduct() {
       if (data.success) {
         alert("✨ " + (data.message || "Garment segmented and cached successfully!"));
         fetchProducts();
+        if (data.product) {
+          setViewingGarment((prev) => (prev && prev._id === id ? data.product : prev));
+        }
       } else {
         alert(data.message || "Segmentation failed.");
       }
@@ -362,19 +366,44 @@ export default function ListProduct() {
                     {products.map((item) => (
                       <tr key={item._id} className="hover:bg-[#C19A6B]/10 transition">
                         <td className="py-3 px-4 flex items-center gap-3">
-                          <img
-                            src={getProductImage(item)}
-                            alt={item.name}
-                            className="w-11 h-11 rounded-xl object-cover border border-gray-200 shadow-sm bg-gray-50 shrink-0"
-                            onError={(e) => {
-                              e.target.src = "https://placehold.co/100x100?text=No+Image";
-                            }}
-                          />
+                          <div className="relative shrink-0">
+                            <img
+                              src={getProductImage(item)}
+                              alt={item.name}
+                              className="w-11 h-11 rounded-xl object-cover border border-gray-200 shadow-sm bg-gray-50"
+                              onError={(e) => {
+                                e.target.src = "https://placehold.co/100x100?text=No+Image";
+                              }}
+                            />
+                            {item.cleanGarmentUrl && (
+                              <span
+                                title="Background Removed (Clean Garment Cached)"
+                                className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center text-white shadow"
+                              >
+                                <Sparkles size={8} />
+                              </span>
+                            )}
+                          </div>
                           <div className="min-w-0">
                             <p className="font-bold text-gray-800 text-sm truncate max-w-[180px]">{item.name}</p>
-                            <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[10px] rounded mt-0.5 uppercase font-semibold">
-                              {item.styleType}
-                            </span>
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[10px] rounded uppercase font-semibold">
+                                {item.styleType}
+                              </span>
+                              {item.cleanGarmentUrl ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setViewingGarment(item)}
+                                  className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-1.5 py-0.5 rounded cursor-pointer transition"
+                                  title="Click to view transparent background-removed garment"
+                                >
+                                  <Eye size={10} />
+                                  <span>Clean AI</span>
+                                </button>
+                              ) : (
+                                <span className="text-[10px] text-gray-400">Raw BG</span>
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td className="py-3 px-3 font-mono text-gray-600 text-xs whitespace-nowrap">{item.sku}</td>
@@ -423,15 +452,24 @@ export default function ListProduct() {
                             >
                               <Boxes size={15} />
                             </Link>
+                            {item.cleanGarmentUrl && (
+                              <button
+                                onClick={() => setViewingGarment(item)}
+                                className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition shadow-sm border border-emerald-300"
+                                title="View Background-Removed Garment (Alpha PNG)"
+                              >
+                                <Eye size={15} />
+                              </button>
+                            )}
                             <button
                               onClick={() => handleProcessGarment(item._id)}
                               disabled={processingId === item._id}
                               className={`p-1.5 rounded-lg transition shadow-sm ${
                                 item.cleanGarmentUrl
-                                  ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300"
-                                  : "bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-300"
+                                  ? "bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200"
+                                  : "bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300"
                               }`}
-                              title={item.cleanGarmentUrl ? "AI Segmented (Cached) - Click to Re-process" : "Run SAM Garment Segmentation (Pipeline A)"}
+                              title={item.cleanGarmentUrl ? "AI Segmented (Cached) - Click to Re-process" : "Run AI Garment Background Removal (Pipeline A)"}
                             >
                               {processingId === item._id ? (
                                 <Loader2 size={15} className="animate-spin text-purple-700" />
@@ -467,14 +505,24 @@ export default function ListProduct() {
                   <div key={item._id} className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
                     <div>
                       <div className="flex items-start gap-3">
-                        <img
-                          src={getProductImage(item)}
-                          alt={item.name}
-                          className="w-14 h-14 rounded-xl object-cover border shrink-0 bg-gray-50"
-                          onError={(e) => {
-                            e.target.src = "https://placehold.co/100x100?text=No+Image";
-                          }}
-                        />
+                        <div className="relative shrink-0">
+                          <img
+                            src={getProductImage(item)}
+                            alt={item.name}
+                            className="w-14 h-14 rounded-xl object-cover border bg-gray-50"
+                            onError={(e) => {
+                              e.target.src = "https://placehold.co/100x100?text=No+Image";
+                            }}
+                          />
+                          {item.cleanGarmentUrl && (
+                            <span
+                              title="Clean Garment available"
+                              className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center text-white"
+                            >
+                              <Sparkles size={8} />
+                            </span>
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <h3 className="font-bold text-gray-800 text-sm truncate">{item.name}</h3>
@@ -486,9 +534,20 @@ export default function ListProduct() {
                             </span>
                           </div>
                           <p className="text-[11px] font-mono text-gray-500 mt-0.5">SKU: {item.sku}</p>
-                          <p className="text-[11px] text-[#C19A6B] font-semibold capitalize mt-0.5">
-                            {item.category} / {item.subcategory}
-                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[11px] text-[#C19A6B] font-semibold capitalize">
+                              {item.category} / {item.subcategory}
+                            </span>
+                            {item.cleanGarmentUrl && (
+                              <button
+                                type="button"
+                                onClick={() => setViewingGarment(item)}
+                                className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded"
+                              >
+                                <Eye size={10} /> Clean
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-xs">
@@ -498,10 +557,18 @@ export default function ListProduct() {
                         </span>
                       </div>
                     </div>
-                    <div className="mt-3 pt-2.5 border-t border-gray-100 grid grid-cols-3 gap-2">
+                    <div className="mt-3 pt-2.5 border-t border-gray-100 grid grid-cols-4 gap-1.5">
                       <Link to="/admin/inventory" className="py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition">
                         <Boxes size={13} /> Stock
                       </Link>
+                      <button
+                        onClick={() => handleProcessGarment(item._id)}
+                        disabled={processingId === item._id}
+                        className="py-2 bg-purple-50 text-purple-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition"
+                        title="AI Background Removal"
+                      >
+                        {processingId === item._id ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />} AI
+                      </button>
                       <button onClick={() => handleEditClick(item)} className="py-2 bg-[#C19A6B]/10 text-[#C19A6B] rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition">
                         <Edit size={13} /> Edit
                       </button>
@@ -659,6 +726,144 @@ export default function ListProduct() {
               <button type="submit" form="editProductForm" disabled={updateLoading} className="px-6 py-2.5 bg-[#C19A6B] hover:bg-[#A97A4D] disabled:bg-[#C19A6B]/50 text-white rounded-xl text-sm font-semibold shadow-md transition flex items-center gap-2">
                 {updateLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : "Save Changes"}
               </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* =========================================
+          VIEW CLEAN GARMENT / BACKGROUND REMOVAL MODAL
+      =========================================== */}
+      {viewingGarment && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl relative flex flex-col overflow-hidden">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm">
+                  <Sparkles size={18} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">Garment Background Removal (Pipeline A)</h3>
+                  <p className="text-xs text-gray-500 font-mono">SKU: {viewingGarment.sku} • {viewingGarment.name}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setViewingGarment(null)}
+                className="p-2 bg-white hover:bg-gray-100 rounded-full text-gray-600 transition shadow-sm border border-gray-200"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body: Comparison Grid */}
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Card 1: Raw Original Image */}
+                <div className="border border-gray-200 rounded-xl p-3 bg-gray-50 flex flex-col items-center">
+                  <div className="w-full flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">1. Original Image</span>
+                    <span className="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full font-semibold">Raw BG</span>
+                  </div>
+                  <div className="w-full h-64 bg-white rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center p-2">
+                    <img
+                      src={viewingGarment.images?.[0]?.url || getProductImage(viewingGarment)}
+                      alt="Original"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
+                </div>
+
+                {/* Card 2: Clean Garment (Background Removed) */}
+                <div className="border-2 border-emerald-300 rounded-xl p-3 bg-emerald-50/30 flex flex-col items-center">
+                  <div className="w-full flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-emerald-800 uppercase tracking-wide flex items-center gap-1">
+                      <Sparkles size={12} className="text-emerald-600" />
+                      2. Clean Garment
+                    </span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
+                      Alpha PNG
+                    </span>
+                  </div>
+                  <div 
+                    className="w-full h-64 rounded-lg border border-emerald-200 overflow-hidden flex items-center justify-center p-2"
+                    style={{
+                      backgroundColor: "#ffffff",
+                      backgroundImage: "linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)",
+                      backgroundSize: "20px 20px",
+                      backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0px",
+                    }}
+                  >
+                    {viewingGarment.cleanGarmentUrl ? (
+                      <img
+                        src={viewingGarment.cleanGarmentUrl}
+                        alt="Clean Garment"
+                        className="max-h-full max-w-full object-contain drop-shadow-md"
+                      />
+                    ) : (
+                      <div className="text-center p-4 text-gray-400 text-xs">
+                        Not yet processed by AI
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Notice Info Box */}
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900 flex items-start gap-2.5">
+                <Sparkles size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Checkerboard pattern transparent background ko zahir karta hai</p>
+                  <p className="text-emerald-700 mt-0.5">
+                    IDM-VTON model customer par try-on karte waqt yeh clean garment use karta hai taake kapre ka original background person photo ke sath interfere na kare.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3">
+              {viewingGarment.cleanGarmentUrl ? (
+                <a
+                  href={viewingGarment.cleanGarmentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 bg-white border border-gray-300 px-3 py-2 rounded-xl hover:bg-gray-100 transition shadow-sm"
+                >
+                  <ExternalLink size={13} />
+                  Open Clean Image Link
+                </a>
+              ) : <div />}
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleProcessGarment(viewingGarment._id)}
+                  disabled={processingId === viewingGarment._id}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5"
+                >
+                  {processingId === viewingGarment._id ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={13} />
+                      Re-process Background
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setViewingGarment(null)}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl text-xs font-semibold transition"
+                >
+                  Close
+                </button>
+              </div>
             </div>
 
           </div>
