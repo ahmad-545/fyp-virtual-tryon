@@ -4,8 +4,6 @@ backend/node_modules/
 frontend/node_modules/
 
 # Environment variables (API keys, passwords)
-.env
-**/.env
 ai_server/.env
 backend/.env
 frontend/.env
@@ -46,3 +44,4 @@ branch_structure.json
 temp_auto_push.bat
 temp_interactive_push.bat
 .gitignore
+config.bat
