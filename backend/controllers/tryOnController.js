@@ -6,12 +6,27 @@ import uploadoncloudinary from "../config/cloudinary.js";
 // ============================================
 // HELPER: Resolve Try-On Category
 // ============================================
-export const resolveTryOnCategory = (category = "", subcategory = "") => {
+export const resolveTryOnCategory = (category = "", subcategory = "", tryOnCategory = "") => {
+  // If explicitly specified in product schema and valid, use it directly
+  if (tryOnCategory && ["upper_body", "lower_body", "dresses"].includes(tryOnCategory)) {
+    return tryOnCategory;
+  }
+
   const cat = (category || "").toLowerCase().trim();
   const sub = (subcategory || "").toLowerCase().trim();
   const combined = `${cat} ${sub}`;
 
-  // 1. Lower Body check
+  // 1. Dresses / Full Body check (Kurta Shalwar, Suits, Gowns, Dresses)
+  const dressKeywords = [
+    "dress", "dresses", "maxi", "frock", "gown", "jumpsuit",
+    "abaya", "suit", "suits", "anarkali", "romper", "one-piece",
+    "kurta", "kameez", "shalwar kameez", "salwar kameez", "two-piece", "three-piece"
+  ];
+  if (dressKeywords.some((kw) => combined.includes(kw))) {
+    return "dresses";
+  }
+
+  // 2. Lower Body check (Pants, Trousers, Jeans)
   const lowerKeywords = [
     "pant", "pants", "trouser", "trousers", "jean", "jeans",
     "short", "shorts", "skirt", "skirts", "bottom", "bottoms",
@@ -21,16 +36,7 @@ export const resolveTryOnCategory = (category = "", subcategory = "") => {
     return "lower_body";
   }
 
-  // 2. Dresses / Full Body check
-  const dressKeywords = [
-    "dress", "dresses", "maxi", "frock", "gown", "jumpsuit",
-    "abaya", "suit", "anarkali", "romper", "one-piece"
-  ];
-  if (dressKeywords.some((kw) => combined.includes(kw))) {
-    return "dresses";
-  }
-
-  // 3. Default to Upper Body (shirts, tops, jackets, hoodies, kurtas, etc.)
+  // 3. Default to Upper Body (shirts, polos, tops, jackets, hoodies)
   return "upper_body";
 };
 
@@ -123,7 +129,8 @@ export const executeTryOn = async (req, res) => {
     // Determine try-on category from product
     const resolvedCategory = resolveTryOnCategory(
       product?.category || "",
-      product?.subcategory || ""
+      product?.subcategory || "",
+      product?.tryOnCategory || ""
     );
 
     // 3. Call FastAPI: POST /try-on with product details and 10 min timeout

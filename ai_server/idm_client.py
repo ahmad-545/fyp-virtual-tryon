@@ -215,7 +215,7 @@ def generate_tryon(
         "guidance_scale": float(guidance_scale or 2.0),
         "seed": resolved_seed,
         "crop": True,
-        "return_intermediates": False,
+        "return_intermediates": True,
     }
 
     print(f"[IDM-CLIENT] POST {worker_url}/tryon")
